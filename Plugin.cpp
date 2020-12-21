@@ -11,7 +11,7 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 
 	//Bit information about the plugin
 	//Please fill this in!!
-	info.BotName = "AI_BOT";
+	info.BotName = "AI_BOT_2";
 	info.Student_FirstName = "Ortwin";
 	info.Student_LastName = "Van der Stappen";
 	info.Student_Class = "2DAE11";
