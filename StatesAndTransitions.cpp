@@ -7,7 +7,7 @@
 // -----------
 
 /// IdleState: public FSMState
-void IdleState::OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	ResetIdleState();
 	// Check if we came from an action
@@ -22,8 +22,9 @@ void IdleState::OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 		}
 	}
 }
-void IdleState::Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
+void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
+	std::cout << "Idle update\n";
 	// Don't need a new plan if we have a next action
 	if (m_HasNext)
 		return;
@@ -46,13 +47,12 @@ void IdleState::ResetIdleState()
 	m_HasNext = false;
 }
 
-void GoToState::OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+// GoToState: public FSMState
+void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Entered GoToState\n";
 }
-
-// GoToState: public FSMState
-void GoToState::Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
+void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
 	AgentInfo* pAgentInfo = nullptr;
 
@@ -65,27 +65,25 @@ void GoToState::Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float del
 	// TODO: Ask the navmesh for a path and go node to node
 }
 
-void PerformState::OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+// Perform state: public FSMState
+void PerformState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Entered PerformState\n";
 }
-
-// Perform state: public FSMState
-void PerformState::Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
+void PerformState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
 	// Perform until the action is done
-	pPlanner->GetAction()->Perform(pBlackboard);
+	pPlanner->GetAction()->Perform(pInterface, pPlanner, pBlackboard);
 }
 
 // PerformedState: public FSMState
-void PerformedState::OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+void PerformedState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Entered PerformedState\n";
 	// The state was performed, go to the next state
 	pPlanner->NextAction();
 }
 /// ------------------
-
 
 
 /// Transitions
@@ -135,4 +133,3 @@ bool PerformedTransition::ToTransition(GOAPPlanner* pPlanner, Blackboard* pBlack
 
 	return false;
 }
-

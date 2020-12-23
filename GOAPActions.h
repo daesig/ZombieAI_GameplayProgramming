@@ -1,31 +1,27 @@
 #pragma once
 #include <unordered_map>
 #include "SteeringHelpers.h"
+#include "IExamInterface.h"
+#include "structs.h"
 
 class Agent;
 class Blackboard;
-struct GOAPProperty
-{
-	std::string propertyKey;
-
-	union value
-	{
-		bool bValue;
-		int iValue;
-		float fValue;
-	};
-};
+class GOAPPlanner;
+class IExamInterface;
 
 class GOAPAction
 {
 public:
-	virtual bool Perform(Blackboard* pBlackboard) = 0;
-	virtual bool CheckProceduralPrecondition(Blackboard* pBlackboard) = 0;
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) = 0;
+
+	// Use data from the world state
+	virtual bool CheckProceduralPrecondition(GOAPPlanner* pPlanner, Blackboard* pBlackboard) = 0;
+
 	virtual bool RequiresMovement() const = 0;
 	virtual bool IsDone() const = 0;
 protected:
-	std::unordered_map<std::string, GOAPProperty> m_Preconditions;
-	std::unordered_map<std::string, GOAPProperty> m_Effects;
+	std::vector<GOAPProperty*> m_Preconditions;
+	std::vector<GOAPProperty*> m_Effects;
 
 	bool m_RequiresMovement;
 	TargetData moveTarget{};
@@ -34,15 +30,10 @@ protected:
 class GOAPMoveTo final : public GOAPAction
 {
 public:
-	virtual bool CheckProceduralPrecondition(Blackboard* pBlackboard);
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) { return true; };
+	virtual bool CheckProceduralPrecondition(GOAPPlanner* pPlanner, Blackboard* pBlackboard) { return true; };
+	virtual bool RequiresMovement() const { return true; };
+	virtual bool IsDone() const { return false; };
 private:
 	float m_MovementFullfilledRange = 1.f;
-};
-
-class GOAPExplore final : public GOAPAction
-{
-public:
-
-private:
-
 };

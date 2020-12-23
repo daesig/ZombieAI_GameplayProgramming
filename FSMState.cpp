@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "FSMState.h"
+#include "IExamInterface.h"
 
-FiniteStateMachine::FiniteStateMachine(FSMState* startState, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+FiniteStateMachine::FiniteStateMachine(FSMState* startState, IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 	: m_pCurrentState(nullptr),
 	m_pBlackboard(pBlackboard)
 {
-	SetState(pPlanner, startState);
+	SetState(pInterface, pPlanner, startState);
 }
 
 FiniteStateMachine::~FiniteStateMachine()
@@ -24,7 +25,7 @@ void FiniteStateMachine::AddTransition(FSMState* startState, FSMState* toState, 
 	m_Transitions[startState].push_back(std::make_pair(transition, toState));
 }
 
-void FiniteStateMachine::Update(GOAPPlanner* pPlanner, float deltaTime)
+void FiniteStateMachine::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, float deltaTime)
 {
 	auto it = m_Transitions.find(m_pCurrentState);
 	if (it != m_Transitions.end())
@@ -35,14 +36,14 @@ void FiniteStateMachine::Update(GOAPPlanner* pPlanner, float deltaTime)
 		{
 			if (transPair.first->ToTransition(pPlanner, m_pBlackboard))
 			{
-				SetState(pPlanner, transPair.second);
+				SetState(pInterface, pPlanner, transPair.second);
 				break;
 			}
 		}
 	}
 
 	if (m_pCurrentState)
-		m_pCurrentState->Update(pPlanner, m_pBlackboard, deltaTime);
+		m_pCurrentState->Update(pInterface, pPlanner, m_pBlackboard, deltaTime);
 }
 
 Blackboard* FiniteStateMachine::GetBlackboard() const
@@ -50,14 +51,14 @@ Blackboard* FiniteStateMachine::GetBlackboard() const
 	return m_pBlackboard;
 }
 
-void FiniteStateMachine::SetState(GOAPPlanner* pPlanner, FSMState* newState)
+void FiniteStateMachine::SetState(IExamInterface* pInterface, GOAPPlanner* pPlanner, FSMState* newState)
 {
 	if (m_pCurrentState)
-		m_pCurrentState->OnExit(pPlanner, m_pBlackboard);
+		m_pCurrentState->OnExit(pInterface, pPlanner, m_pBlackboard);
 	m_pCurrentState = newState;
 	if (m_pCurrentState)
 	{
 		std::cout << "Entering state: " << typeid(*m_pCurrentState).name() << std::endl;
-		m_pCurrentState->OnEnter(pPlanner, m_pBlackboard);
+		m_pCurrentState->OnEnter(pInterface, pPlanner, m_pBlackboard);
 	}
 }

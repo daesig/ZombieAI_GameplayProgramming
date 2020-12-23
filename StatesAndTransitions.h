@@ -9,8 +9,8 @@
 class IdleState final: public FSMState 
 {
 public:
-	virtual void OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-	virtual void Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
+	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 private:
 	float m_TimePerActionCheck = .5f;
 	float m_ActionTimer = 0.f;
@@ -21,19 +21,19 @@ private:
 
 class GoToState: public FSMState
 {
-	virtual void OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-	virtual void Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
+	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 };
 
 class PerformState : public FSMState
 {
-	virtual void OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-	virtual void Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
+	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 };
 
 class PerformedState: public FSMState
 {
-	virtual void OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 };
 
 // TRANSITIONS

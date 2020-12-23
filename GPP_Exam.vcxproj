@@ -193,7 +193,9 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SteeringBehaviors.h" />
     <ClInclude Include="SteeringHelpers.h" />
+    <ClInclude Include="structs.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="WorldState.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Agent.cpp" />
@@ -208,6 +210,7 @@
     </ClCompile>
     <ClCompile Include="SteeringBehaviors.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="WorldState.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

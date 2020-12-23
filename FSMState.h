@@ -6,6 +6,7 @@
 #include "Blackboard.h"
 #include "DecisionMaking.h"
 
+class IExamInterface;
 class GOAPPlanner;
 class FSMState
 {
@@ -13,9 +14,9 @@ public:
 	FSMState() {}
 	virtual ~FSMState() = default;
 
-	virtual void OnEnter(GOAPPlanner* pPlanner, Blackboard* pBlackboard) {};
-	virtual void OnExit(GOAPPlanner* pPlanner, Blackboard* pBlackboard) {};
-	virtual void Update(GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) {};
+	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) {};
+	virtual void OnExit(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) {};
+	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) {};
 };
 
 class FSMTransition
@@ -29,15 +30,15 @@ public:
 class FiniteStateMachine final : public DecisionMaking
 {
 public:
-	FiniteStateMachine(FSMState* startState, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	FiniteStateMachine(FSMState* startState,IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual ~FiniteStateMachine();
 
 	void AddTransition(FSMState* startState, FSMState* toState, FSMTransition* transition);
-	virtual void Update(GOAPPlanner* pPlanner, float deltaTime) override;
+	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, float deltaT);
 	Blackboard* GetBlackboard() const;
 
 private:
-	void SetState(GOAPPlanner* pPlanner,FSMState* newState);
+	void SetState(IExamInterface* pInterface, GOAPPlanner* pPlanner,FSMState* newState);
 private:
 	typedef std::pair<FSMTransition*, FSMState*> TransitionStatePair;
 	typedef std::vector<TransitionStatePair> Transitions;

@@ -2,6 +2,7 @@
 #include <vector>
 #include "IExamInterface.h"
 #include "SteeringBehaviors.h"
+#include "WorldState.h"
 
 // Planning
 class GOAPPlanner;
@@ -30,27 +31,27 @@ public:
 
 	void SetBehavior(BehaviorType behaviorType);
 private:
-	bool m_CanRun = false; //Demo purpose
-	bool m_GrabItem = false; //Demo purpose
-	bool m_UseItem = false; //Demo purpose
-	bool m_RemoveItem = false; //Demo purpose
-	float m_AngSpeed = 0.f; //Demo purpose
-
-	void InitializeBehaviors();
-	void DeleteBehaviors();
-
-	//Decision making 
+	// Decision making 
 	std::vector<FSMState*> m_pStates{};
 	std::vector<FSMTransition*> m_pTransitions{};
 	FiniteStateMachine* m_pFiniteStateMachine;
+
+	// Planner
+	GOAPPlanner* m_pGOAPPlanner = nullptr;
 
 	// Steering behaviors
 	ISteeringBehavior* m_pSteeringBehavior = nullptr;
 	DecisionMaking* m_pDecisionMaking = nullptr;
 	Wander* m_pWanderBehavior = nullptr;
 
+	// Data
 	Blackboard* m_pBlackboard = nullptr;
-	GOAPPlanner* m_pGOAPPlanner = nullptr;
+	WorldState* m_pWorldState = nullptr;
 
+	// Private functions
+	void Initialize();
+	void AddWorldStates();
+	void InitGOAP();
+	void DeleteBehaviors();
 };
 

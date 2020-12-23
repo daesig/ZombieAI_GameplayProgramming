@@ -24,6 +24,9 @@
     <ClCompile Include="GOAPActions.cpp">
       <Filter>Custom\GOAP</Filter>
     </ClCompile>
+    <ClCompile Include="WorldState.cpp">
+      <Filter>Custom\World</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Plugin.h" />
@@ -58,6 +61,12 @@
     <ClInclude Include="GOAPActions.h">
       <Filter>Custom\GOAP</Filter>
     </ClInclude>
+    <ClInclude Include="structs.h">
+      <Filter>Custom\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldState.h">
+      <Filter>Custom\World</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Custom">
@@ -77,6 +86,9 @@
     </Filter>
     <Filter Include="Custom\Agent">
       <UniqueIdentifier>{491f0962-ac61-4fe5-b673-de03e0d79a5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\World">
+      <UniqueIdentifier>{861649b2-f290-4dae-997a-6796f051ff50}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

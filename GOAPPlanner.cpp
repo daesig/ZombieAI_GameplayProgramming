@@ -1,15 +1,22 @@
 #include "stdafx.h"
 #include "GOAPPlanner.h"
 
+GOAPPlanner::GOAPPlanner():
+	m_pActions{},
+	m_CurrentActionIndex{ 0 }
+{}
+
 void GOAPPlanner::PlanAction()
 {
 	// Obtain the best path towards the goal
+	m_pActionQueue.empty();
+	m_pActionQueue.push(m_pActions[0]);
 }
 
 GOAPAction* GOAPPlanner::GetAction() const
 {
-	if (m_pActions.size() >= m_CurrentActionIndex) {
-		return m_pActions[m_CurrentActionIndex];
+	if (m_pActionQueue.size() > 0) {
+		return m_pActionQueue.front();
 	}
 
 	return nullptr;
@@ -17,5 +24,15 @@ GOAPAction* GOAPPlanner::GetAction() const
 
 void GOAPPlanner::NextAction()
 {
-	m_CurrentActionIndex++;
+	m_pActionQueue.pop();
+}
+
+void GOAPPlanner::SetWorldState(WorldState* pWorldState)
+{
+	m_pWorldState = pWorldState;
+}
+
+void GOAPPlanner::AddAction(GOAPAction* pAction)
+{
+	m_pActions.push_back(pAction);
 }
