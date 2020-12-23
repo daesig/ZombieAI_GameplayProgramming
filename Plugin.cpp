@@ -11,7 +11,7 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 
 	//Bit information about the plugin
 	//Please fill this in!!
-	info.BotName = "AI_BOT_2";
+	info.BotName = "AI_BOT";
 	info.Student_FirstName = "Ortwin";
 	info.Student_LastName = "Van der Stappen";
 	info.Student_Class = "2DAE11";
@@ -21,12 +21,14 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 void Plugin::DllInit()
 {
 	//Called when the plugin is loaded
+	m_pAgent = new Agent();
 }
 
 //Called only once
 void Plugin::DllShutdown()
 {
 	//Called wheb the plugin gets unloaded
+	delete m_pAgent;
 }
 
 //Called only once, during initialization
@@ -88,77 +90,7 @@ void Plugin::Update(float dt)
 SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 {
 	auto steering = SteeringPlugin_Output();
-
-	//Use the Interface (IAssignmentInterface) to 'interface' with the AI_Framework
-	auto agentInfo = m_pInterface->Agent_GetInfo();
-
-	auto nextTargetPos = m_Target; //To start you can use the mouse position as guidance
-
-	auto vHousesInFOV = GetHousesInFOV();//uses m_pInterface->Fov_GetHouseByIndex(...)
-	auto vEntitiesInFOV = GetEntitiesInFOV(); //uses m_pInterface->Fov_GetEntityByIndex(...)
-
-	for (auto& e : vEntitiesInFOV)
-	{
-		if (e.Type == eEntityType::PURGEZONE)
-		{
-			PurgeZoneInfo zoneInfo;
-			m_pInterface->PurgeZone_GetInfo(e, zoneInfo);
-			std::cout << "Purge Zone in FOV:" << e.Location.x << ", "<< e.Location.y <<  " ---EntityHash: " << e.EntityHash << "---Radius: "<< zoneInfo.Radius << std::endl;
-		}
-	}
-	
-
-	//INVENTORY USAGE DEMO
-	//********************
-
-	if (m_GrabItem)
-	{
-		ItemInfo item;
-		//Item_Grab > When DebugParams.AutoGrabClosestItem is TRUE, the Item_Grab function returns the closest item in range
-		//Keep in mind that DebugParams are only used for debugging purposes, by default this flag is FALSE
-		//Otherwise, use GetEntitiesInFOV() to retrieve a vector of all entities in the FOV (EntityInfo)
-		//Item_Grab gives you the ItemInfo back, based on the passed EntityHash (retrieved by GetEntitiesInFOV)
-		if (m_pInterface->Item_Grab({}, item))
-		{
-			//Once grabbed, you can add it to a specific inventory slot
-			//Slot must be empty
-			m_pInterface->Inventory_AddItem(0, item);
-		}
-	}
-
-	if (m_UseItem)
-	{
-		//Use an item (make sure there is an item at the given inventory slot)
-		m_pInterface->Inventory_UseItem(0);
-	}
-
-	if (m_RemoveItem)
-	{
-		//Remove an item from a inventory slot
-		m_pInterface->Inventory_RemoveItem(0);
-	}
-
-	//Simple Seek Behaviour (towards Target)
-	steering.LinearVelocity = nextTargetPos - agentInfo.Position; //Desired Velocity
-	steering.LinearVelocity.Normalize(); //Normalize Desired Velocity
-	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed
-
-	if (Distance(nextTargetPos, agentInfo.Position) < 2.f)
-	{
-		steering.LinearVelocity = Elite::ZeroVector2;
-	}
-
-	//steering.AngularVelocity = m_AngSpeed; //Rotate your character to inspect the world while walking
-	steering.AutoOrient = true; //Setting AutoOrientate to TRue overrides the AngularVelocity
-
-	steering.RunMode = m_CanRun; //If RunMode is True > MaxLinSpd is increased for a limited time (till your stamina runs out)
-
-								 //SteeringPlugin_Output is works the exact same way a SteeringBehaviour output
-
-								 //@End (Demo Purposes)
-	m_GrabItem = false; //Reset State
-	m_UseItem = false;
-	m_RemoveItem = false;
+	steering = m_pAgent->UpdateSteering(m_pInterface, dt);
 
 	return steering;
 }
@@ -166,44 +98,5 @@ SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 //This function should only be used for rendering debug elements
 void Plugin::Render(float dt) const
 {
-	//This Render function should only contain calls to Interface->Draw_... functions
-	m_pInterface->Draw_SolidCircle(m_Target, .7f, { 0,0 }, { 1, 0, 0 });
-}
-
-vector<HouseInfo> Plugin::GetHousesInFOV() const
-{
-	vector<HouseInfo> vHousesInFOV = {};
-
-	HouseInfo hi = {};
-	for (int i = 0;; ++i)
-	{
-		if (m_pInterface->Fov_GetHouseByIndex(i, hi))
-		{
-			vHousesInFOV.push_back(hi);
-			continue;
-		}
-
-		break;
-	}
-
-	return vHousesInFOV;
-}
-
-vector<EntityInfo> Plugin::GetEntitiesInFOV() const
-{
-	vector<EntityInfo> vEntitiesInFOV = {};
-
-	EntityInfo ei = {};
-	for (int i = 0;; ++i)
-	{
-		if (m_pInterface->Fov_GetEntityByIndex(i, ei))
-		{
-			vEntitiesInFOV.push_back(ei);
-			continue;
-		}
-
-		break;
-	}
-
-	return vEntitiesInFOV;
+	m_pAgent->Render(m_pInterface, dt);
 }
