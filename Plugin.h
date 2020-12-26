@@ -1,6 +1,7 @@
 #pragma once
 #include "IExamPlugin.h"
 #include "Exam_HelperStructs.h"
+#include "Agent.h"
 
 class IBaseInterface;
 class IExamInterface;
@@ -24,8 +25,6 @@ public:
 private:
 	//Interface, used to request data from/perform actions with the AI Framework
 	IExamInterface* m_pInterface = nullptr;
-	vector<HouseInfo> GetHousesInFOV() const;
-	vector<EntityInfo> GetEntitiesInFOV() const;
 
 	Elite::Vector2 m_Target = {};
 	bool m_CanRun = false; //Demo purpose
@@ -33,6 +32,8 @@ private:
 	bool m_UseItem = false; //Demo purpose
 	bool m_RemoveItem = false; //Demo purpose
 	float m_AngSpeed = 0.f; //Demo purpose
+
+	Agent* m_pAgent = nullptr;
 };
 
 //ENTRY

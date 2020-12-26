@@ -3,9 +3,92 @@
   <ItemGroup>
     <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="SteeringBehaviors.cpp">
+      <Filter>Custom\Steering</Filter>
+    </ClCompile>
+    <ClCompile Include="StatesAndTransitions.cpp">
+      <Filter>Custom\FSM</Filter>
+    </ClCompile>
+    <ClCompile Include="FSMState.cpp">
+      <Filter>Custom\FSM</Filter>
+    </ClCompile>
+    <ClCompile Include="GOAPPlanner.cpp">
+      <Filter>Custom\GOAP</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Custom\Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="Agent.cpp">
+      <Filter>Custom\Agent</Filter>
+    </ClCompile>
+    <ClCompile Include="GOAPActions.cpp">
+      <Filter>Custom\GOAP</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldState.cpp">
+      <Filter>Custom\World</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Plugin.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SteeringHelpers.h">
+      <Filter>Custom\Steering</Filter>
+    </ClInclude>
+    <ClInclude Include="SteeringBehaviors.h">
+      <Filter>Custom\Steering</Filter>
+    </ClInclude>
+    <ClInclude Include="StatesAndTransitions.h">
+      <Filter>Custom\FSM</Filter>
+    </ClInclude>
+    <ClInclude Include="FSMState.h">
+      <Filter>Custom\FSM</Filter>
+    </ClInclude>
+    <ClInclude Include="DecisionMaking.h">
+      <Filter>Custom\FSM</Filter>
+    </ClInclude>
+    <ClInclude Include="GOAPPlanner.h">
+      <Filter>Custom\GOAP</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Custom\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Blackboard.h">
+      <Filter>Custom\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Agent.h">
+      <Filter>Custom\Agent</Filter>
+    </ClInclude>
+    <ClInclude Include="GOAPActions.h">
+      <Filter>Custom\GOAP</Filter>
+    </ClInclude>
+    <ClInclude Include="structs.h">
+      <Filter>Custom\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldState.h">
+      <Filter>Custom\World</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Custom">
+      <UniqueIdentifier>{563ecd34-1fa4-429c-971d-1d2f071db844}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\Steering">
+      <UniqueIdentifier>{6eecb1b8-ef08-4bda-b39e-02c4c83e52aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\FSM">
+      <UniqueIdentifier>{29ace94c-23d9-40e5-b9c4-1f3898c7cc09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\GOAP">
+      <UniqueIdentifier>{82a99888-2d58-4105-9793-e766e3ce6e85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\Helpers">
+      <UniqueIdentifier>{625daa44-41d3-42c5-965d-c05b21303f94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\Agent">
+      <UniqueIdentifier>{491f0962-ac61-4fe5-b673-de03e0d79a5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Custom\World">
+      <UniqueIdentifier>{861649b2-f290-4dae-997a-6796f051ff50}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
