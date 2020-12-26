@@ -60,7 +60,7 @@ void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 	{
 		std::cout << "GoToState::OnEnter, problem fetching data from blackboard\n";
 		return;
-	}
+}
 	pAgent->SetBehavior(Agent::BehaviorType::SEEK);
 }
 void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
@@ -125,7 +125,9 @@ bool GoToTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* pPlan
 	if (pAction->RequiresMovement(pInterface, pPlanner, pBlackboard))
 		return true;
 
-	return false;
+		return false;
+
+	return true;
 }
 
 // PerformTransition: public FSMTransition

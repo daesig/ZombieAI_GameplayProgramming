@@ -4,6 +4,7 @@
 struct GOAPProperty
 {
 	std::string propertyKey;
+
 	union PropertyValue
 	{
 		PropertyValue(bool value) { bValue = value; }

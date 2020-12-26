@@ -61,6 +61,7 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	//	m_pSeekBehavior->SetTarget(vHousesInFOV[0].Center);
 	//}
 
+	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
 	//auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	//for (auto& e : vEntitiesInFOV)

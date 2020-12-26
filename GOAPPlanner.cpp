@@ -2,6 +2,7 @@
 #include "GOAPPlanner.h"
 
 GOAPPlanner::GOAPPlanner():
+	m_pActions{},
 	m_CurrentActionIndex{ 0 }
 {}
 
@@ -48,6 +49,6 @@ void GOAPPlanner::AddActions(std::vector<GOAPAction*>& m_pActionsToAdd)
 {
 	for (GOAPAction* pAction : m_pActionsToAdd)
 	{
-		m_pActions.push_back(pAction);
-	}
+	m_pActions.push_back(pAction);
+}
 }
