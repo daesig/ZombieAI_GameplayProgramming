@@ -36,12 +36,6 @@ public:
 	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 };
 
-class PerformedState: public FSMState
-{
-public:
-	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-};
-
 // TRANSITIONS
 // -----------
 class GoToTransition : public FSMTransition

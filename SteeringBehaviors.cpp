@@ -2,26 +2,29 @@
 
 //Includes
 #include "SteeringBehaviors.h"
+#include "Blackboard.h"
+#include "Agent.h"
+#include "IExamInterface.h"
 
 //SEEK (base>ISteeringBehavior)
-SteeringPlugin_Output Seek::CalculateSteering(float deltaT, AgentInfo& pAgent)
+SteeringPlugin_Output Seek::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
 {
 	SteeringPlugin_Output steering{};
 
-	steering.LinearVelocity = (m_Target).Position - pAgent.Position; //Desired Velocity
+	steering.LinearVelocity = m_Target - agentInfo.Position; //Desired Velocity
 	steering.LinearVelocity.Normalize(); //Normalize Desired Velocity
-	steering.LinearVelocity *= pAgent.MaxLinearSpeed; //Rescale to Max Speed
+	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed
 
 	return steering;
 }
-void Seek::SetTarget(const TargetData& target)
+void Seek::SetTarget(const Elite::Vector2& target)
 {
 	ISteeringBehavior::SetTarget(target);
 }
 
 Elite::Vector2 Seek::GetTarget() const
 {
-	return m_Target.Position;
+	return m_Target;
 }
 
 //WANDER (base>ISteeringBehavior)
@@ -31,29 +34,29 @@ Wander::Wander() :
 	m_RenewDistance{ 2.f }
 {}
 
-SteeringPlugin_Output Wander::CalculateSteering(float deltaT, AgentInfo& pAgent)
+SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
 {
 	SteeringPlugin_Output steering{};
 
 	// Check where the agent is looking
-	float rotation = pAgent.Orientation;
+	float rotation = agentInfo.Orientation;
 
 	// Determine wander radius in front of actor
 	// Scale the wander distance with the target movement speed for better wander behavior
-	float finalDistanceFromActor = m_DistanceFromActor + pAgent.AgentSize + (pAgent.CurrentLinearSpeed / 2.f);
+	float finalDistanceFromActor = m_DistanceFromActor + agentInfo.AgentSize + (agentInfo.CurrentLinearSpeed / 2.f);
 	const Elite::Vector2 wanderCenter
 	{
-		pAgent.Position +
+		agentInfo.Position +
 		Elite::Vector2(finalDistanceFromActor * (float)cos(rotation - M_PI / 2.f),
 						finalDistanceFromActor * (float)sin(rotation - M_PI / 2.f))
 	};
 
 
 	// Scale the wander radius with the target movement speed for better wander behavior
-	float finalWanderRadius = m_WanderRadius + pAgent.AgentSize + pAgent.MaxLinearSpeed / 2.f;
+	float finalWanderRadius = m_WanderRadius + agentInfo.AgentSize + agentInfo.MaxLinearSpeed / 2.f;
 	// Agent is close enough to wanderTarget or the target has left the wander radius
-	if ((pAgent.Position.Distance(m_WanderTarget.Position) < m_RenewDistance + pAgent.AgentSize) ||
-		(wanderCenter.Distance(m_WanderTarget.Position) > (finalWanderRadius)))
+	if ((agentInfo.Position.Distance(m_Target) < m_RenewDistance + agentInfo.AgentSize) ||
+		(wanderCenter.Distance(m_Target) > (finalWanderRadius)))
 	{
 		// Create an offset from the center of the wanderradius
 		int randomAngle{ Elite::randomInt(360) };
@@ -63,19 +66,78 @@ SteeringPlugin_Output Wander::CalculateSteering(float deltaT, AgentInfo& pAgent)
 		};
 
 		// Set target position with the offset
-		m_WanderTarget.Position = wanderCenter + randomOffset;
+		m_Target = wanderCenter + randomOffset;
 	}
 
 	// Seek
-	steering.LinearVelocity = m_WanderTarget.Position - pAgent.Position; //Desired Velocity
+	steering.LinearVelocity = m_Target - agentInfo.Position; //Desired Velocity
 	steering.LinearVelocity.Normalize(); //Normalize Desired Velocity
-	steering.LinearVelocity *= pAgent.MaxLinearSpeed; //Rescale to Max Speed=
+	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed=
 
 	return steering;
 }
-void Wander::SetTarget(const TargetData& target)
-{
-	// Intentionally left blank so that no manual target can be set.
-	return;
-}
 
+// Dodge the enemy, keeping in mind the goal location
+SteeringPlugin_Output DodgeEnemy::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
+{
+	SteeringPlugin_Output steering{};
+
+	// Data 
+	Agent* pAgent = nullptr;
+	WorldState* pWorldState = nullptr;
+	Elite::Vector2* lastSeenEnemyPos{};
+
+	// Check if agent data is valid
+	bool dataValid = pBlackboard->GetData("Agent", pAgent)
+		&& pBlackboard->GetData("LastEnemyPos", lastSeenEnemyPos)
+		&& pBlackboard->GetData("WorldState", pWorldState);
+	if (!dataValid) return steering;
+
+	bool enemyInSight = false;
+	pWorldState->GetState("EnemyInSight", enemyInSight);
+
+	// Get the position that the agent wants to go in
+	const Elite::Vector2& agentGoalPosition = pAgent->GetGoalPosition();
+	const Elite::Vector2 agentToGoalVec{ agentGoalPosition - agentInfo.Position };
+
+	if (enemyInSight)
+	{
+		// Get the angle between the goal vector and the direction towards the enemy
+		float angle = atan2(lastSeenEnemyPos->y - agentInfo.Position.y, lastSeenEnemyPos->x - agentInfo.Position.x);
+		float angleDeg = angle * 180.f / float(M_PI);
+		//std::cout << "Angle to nearest enemy: rad [" << angle << "], deg [ " << angleDeg << "], Orientation [" << agentInfo.Orientation << "]\n";
+
+		// Get the vector to the enemy
+		Elite::Vector2 v{ *lastSeenEnemyPos - agentInfo.Position };
+		// Mirror the toEnemy vector over the agent direction to obtain a dodge velocity
+		const Elite::Vector2 normal = agentToGoalVec.GetNormalized();
+		const double perp = 2.0 * v.Dot(normal);
+		Elite::Vector2 reflectDir = v - (perp * normal);
+		reflectDir.x *= -1.f;
+		reflectDir.y *= -1.f;
+
+		//steering.LinearVelocity = agentToGoalVec;
+		steering.LinearVelocity = normal * 3.f + reflectDir;
+		steering.LinearVelocity.Normalize();
+		steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
+
+		steering.RunMode = true;
+
+		//pInterface->Draw_Direction(agentInfo.Position, toEnemy, 5.f, Elite::Vector3{ 1.f,0.f,0.f });
+		pInterface->Draw_Direction(agentInfo.Position, reflectDir, 5.f, Elite::Vector3{ 0.f,0.f,1.f });
+	}
+	else
+	{
+		// Move towards goal location, dodge is not required
+		steering.LinearVelocity = agentGoalPosition - agentInfo.Position;
+		steering.LinearVelocity.Normalize();
+		steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
+		
+		steering.RunMode = false;
+	}
+
+	// Debug agent velocity
+	pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
+
+	return steering;
+}

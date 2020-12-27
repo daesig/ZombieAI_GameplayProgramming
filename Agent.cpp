@@ -1,7 +1,9 @@
 #include "stdafx.h"
 
 #include "Agent.h"
+
 #include "utils.h"
+
 #include "GOAPPlanner.h"
 #include "DecisionMaking.h"
 #include "Blackboard.h"
@@ -34,8 +36,9 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	AgentInfo agentInfo = pInterface->Agent_GetInfo();
 	if (m_pSteeringBehavior)
 	{
-		steering = m_pSteeringBehavior->CalculateSteering(dt, agentInfo);
+		steering = m_pSteeringBehavior->CalculateSteering(pInterface, dt, agentInfo, m_pBlackboard);
 	}
+
 
 	// Update known locations
 	if (m_ExploredLocationTimer >= m_ExploredLocationRefreshTime)
@@ -54,15 +57,22 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	}
 	m_ExploredLocationTimer += dt;
 
-	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface); //uses m_pInterface->Fov_GetHouseByIndex(...)
-	//if (vHousesInFOV.size() > 0) 
-	//{
-	//	std::cout << "Found a house\n";
-	//	m_pSeekBehavior->SetTarget(vHousesInFOV[0].Center);
-	//}
-
 	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
-	//auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
+	auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
+
+	// Reset worldstate
+	m_pWorldState->SetState("EnemyInSight", false);
+	float closestDistanceSq{ FLT_MAX };
+	for (auto& enemyInFov : vEntitiesInFOV)
+	{
+		float distanceToEnemySq = agentInfo.Position.DistanceSquared(enemyInFov.Location);
+		if (distanceToEnemySq < closestDistanceSq) 
+		{
+			m_LastSeenClosestEnemy = enemyInFov.Location;
+			m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
+			m_pWorldState->SetState("EnemyInSight", true);
+		}
+	}
 
 	//for (auto& e : vEntitiesInFOV)
 	//{
@@ -76,21 +86,25 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 
 	return steering;
 }
-
 void Agent::Render(IExamInterface* pExamInterface, float dt) const
 {
 	//pExamInterface->Draw_SolidCircle(pExam, .7f, { 0,0 }, { 1, 0, 0 });
-	for (const Elite::Vector2& exploredLocation : m_ExploredTileLocations) 
+	for (const Elite::Vector2& exploredLocation : m_ExploredTileLocations)
 	{
 		pExamInterface->Draw_Circle(exploredLocation, .5f, Elite::Vector3{ 1.f,1.f,1.f });
 	}
 
-	if (m_DebugSeek) 
+	if (m_DebugSeek)
 		pExamInterface->Draw_SolidCircle(m_pSeekBehavior->GetTarget(), .5f, Elite::Vector2{}, Elite::Vector3{ 1.f, 0.f, 0.f });
 
 	pExamInterface->Draw_Circle(Elite::Vector2{ 0.f,0.f }, 200.f, Elite::Vector3{ 0.f, 0.f, 1.f });
 }
 
+// Controlling behaviors
+void Agent::ClearBehavior()
+{
+	m_pSteeringBehavior = nullptr;
+}
 void Agent::SetBehavior(BehaviorType behaviorType)
 {
 	m_DebugSeek = false;
@@ -103,9 +117,12 @@ void Agent::SetBehavior(BehaviorType behaviorType)
 		m_pSteeringBehavior = m_pSeekBehavior;
 		m_DebugSeek = true;
 		break;
+	case BehaviorType::DODGE:
+		m_pSteeringBehavior = m_pDodgeBehavior;
+		//m_DebugSeek = true;
+		break;
 	}
 }
-
 void Agent::SetSeekPos(Elite::Vector2 seekPos)
 {
 	m_pSeekBehavior->SetTarget(seekPos);
@@ -119,10 +136,13 @@ void Agent::Initialize()
 	// Blackboard
 	m_pBlackboard = new Blackboard();
 	m_pBlackboard->AddData("Agent", this);
+	m_pBlackboard->AddData("LastEnemyPos", &m_LastSeenClosestEnemy);
+	m_pBlackboard->AddData("WorldState", m_pWorldState);
 
 	// Behaviors
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
+	m_pDodgeBehavior = new DodgeEnemy();
 
 	// Initialize GOAP
 	InitGOAP();
@@ -156,7 +176,7 @@ void Agent::Initialize()
 void Agent::AddWorldStates()
 {
 	m_pWorldState = new WorldState();
-	m_pWorldState->AddState("HasArrived", false);
+	m_pWorldState->AddState("EnemyInSight", false);
 }
 
 void Agent::InitGOAP()
@@ -169,8 +189,10 @@ void Agent::InitGOAP()
 	// GOAPMoveTo
 	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
+	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
 	m_pActions.push_back(pGOAPExploreWorldAction);
 	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
+	m_pActions.push_back(pGOAPEvadeEnemy);
 	//...
 
 	// Let the planner know all the action this agent can do

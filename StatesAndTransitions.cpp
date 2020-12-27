@@ -19,8 +19,6 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 			// Next action exists
 			m_HasNext = true;
 		}
-
-		pAction->Plan(pInterface, pPlanner, pBlackboard);
 	}
 }
 void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
@@ -51,16 +49,23 @@ void IdleState::ResetIdleState()
 // GoToState: public FSMState
 void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
+	// Debug announcement
 	std::cout << "Entered GoToState\n";
+	// Setup the action
+	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
+
+	// Setup GoTo state
 	m_PathRefreshTimer = m_PathRefreshDuration;
 
+	// Get the agent
 	Agent* pAgent = nullptr;
 	bool foundData = pBlackboard->GetData("Agent", pAgent);
 	if (!foundData)
 	{
 		std::cout << "GoToState::OnEnter, problem fetching data from blackboard\n";
 		return;
-}
+	}
+	// Set agent behavior
 	pAgent->SetBehavior(Agent::BehaviorType::SEEK);
 }
 void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
@@ -92,19 +97,13 @@ void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 void PerformState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Entered PerformState\n";
+	// Setup the action
+	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
 }
 void PerformState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
 	// Perform until the action is done
-	pPlanner->GetAction()->Perform(pInterface, pPlanner, pBlackboard);
-}
-
-// PerformedState: public FSMState
-void PerformedState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	std::cout << "Entered PerformedState\n";
-	// The state was performed, go to the next state
-	pPlanner->NextAction();
+	pPlanner->GetAction()->Perform(pInterface, pPlanner, pBlackboard, deltaTime);
 }
 /// ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -125,7 +124,7 @@ bool GoToTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* pPlan
 	if (pAction->RequiresMovement(pInterface, pPlanner, pBlackboard))
 		return true;
 
-		return false;
+	return false;
 
 	return true;
 }

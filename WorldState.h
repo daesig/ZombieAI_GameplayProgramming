@@ -37,6 +37,7 @@ public:
 		auto it = m_pStates.find(key);
 		if (it == m_pStates.end())
 		{
+			std::cout << "Adding state: " << key << " \n";
 			m_pStates[key] = new State<T>(value);
 			return;
 		}
@@ -53,7 +54,7 @@ public:
 			State<T>* pState = dynamic_cast<State<T>*>(m_pStates[key]);
 			if (pState)
 			{
-				p->SetData(newValue);
+				pState->SetValue(newValue);
 			}
 		}
 	}

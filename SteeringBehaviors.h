@@ -14,18 +14,18 @@
 #include <Exam_HelperStructs.h>
 #include <unordered_map>
 
-#pragma region **ISTEERINGBEHAVIOR** (BASE)
+class IExamInterface;
+class Blackboard;
 class ISteeringBehavior
 {
 public:
 	ISteeringBehavior() = default;
 	virtual ~ISteeringBehavior() = default;
 
-	virtual SteeringPlugin_Output CalculateSteering(float deltaT, AgentInfo& pAgent) = 0;
+	virtual SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) = 0;
 
 	//Seek Functions
-	virtual void SetTarget(const TargetData& target) { m_Target = target; }
-
+	virtual void SetTarget(const Elite::Vector2& target) { m_Target = target; }
 	template<class T, typename std::enable_if<std::is_base_of<ISteeringBehavior, T>::value>::type* = nullptr>
 	T* As()
 	{
@@ -33,7 +33,7 @@ public:
 	}
 
 protected:
-	TargetData m_Target;
+	Elite::Vector2 m_Target;
 };
 #pragma endregion
 
@@ -45,8 +45,8 @@ public:
 	virtual ~Seek() = default;
 
 	//Seek Behaviour
-	SteeringPlugin_Output CalculateSteering(float deltaT, AgentInfo& pAgent) override;
-	virtual void SetTarget(const TargetData& target) override;
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+	virtual void SetTarget(const Elite::Vector2& target) override;
 	Elite::Vector2 GetTarget() const;
 };
 
@@ -56,15 +56,21 @@ class Wander : public ISteeringBehavior
 public:
 	Wander();
 	virtual ~Wander() = default;
-
-	//Wander Behavior
-	SteeringPlugin_Output CalculateSteering(float deltaT, AgentInfo& pAgent) override;
-
-	virtual void SetTarget(const TargetData& target) override;
-
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
 private:
 	float m_DistanceFromActor;
 	float m_WanderRadius;
 	float m_RenewDistance;
-	TargetData m_WanderTarget;
+};
+
+class DodgeEnemy : public ISteeringBehavior
+{
+public:
+	DodgeEnemy() = default;
+	virtual ~DodgeEnemy() = default;
+
+	//Wander Behavior
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+private:
+	float m_DodgeAngle = 35.f; // Angle in degrees
 };
