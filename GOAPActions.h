@@ -22,6 +22,10 @@ public:
 	// Perform the action
 	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt) { return true; };
 
+	std::vector<GOAPProperty*> GetPreconditions() { return m_Preconditions; };
+	std::vector<GOAPProperty*> GetEffects() { return m_Effects; };
+	bool HasEffect(GOAPProperty* pPrecondition);
+
 	float GetCost() { return m_Cost; };
 	virtual Elite::Vector2 GetMoveLocation() { return moveTarget.Position; };
 
@@ -51,6 +55,16 @@ protected:
 
 	// Cleanup
 	virtual void Cleanup();
+};
+
+class GOAPSurvive : public GOAPAction
+{
+public:
+	GOAPSurvive(GOAPPlanner* pPlanner);
+	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+private:
+	virtual void InitPreConditions(GOAPPlanner* pPlanner);
+	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
 
 class GOAPExploreWorldAction final : public GOAPAction

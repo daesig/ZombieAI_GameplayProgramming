@@ -7,6 +7,8 @@ class GOAPPlanner
 {
 public:
 	GOAPPlanner();
+	~GOAPPlanner();
+
 	void PlanAction();
 	GOAPAction* GetAction() const;
 	void NextAction();
@@ -21,4 +23,8 @@ private:
 	std::queue<GOAPAction*> m_pActionQueue{};
 	WorldState* m_pWorldState = nullptr;
 	int m_CurrentActionIndex = 0;
+
+	GOAPSurvive* m_pGoalAction = nullptr;
+
+	float GetHeuristicCost(GOAPAction* pAction);
 };

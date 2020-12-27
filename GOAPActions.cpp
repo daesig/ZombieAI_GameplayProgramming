@@ -15,6 +15,18 @@ GOAPAction::~GOAPAction()
 {
 	Cleanup();
 }
+bool GOAPAction::HasEffect(GOAPProperty* pPrecondition)
+{
+	bool hasEffect{ false };
+	for (GOAPProperty* pEffect : m_Effects)
+	{
+		if (pEffect->propertyKey == pPrecondition->propertyKey) 
+		{
+			hasEffect = true;
+		}
+	}
+	return hasEffect;
+}
 void GOAPAction::Cleanup()
 {
 	for (GOAPProperty* pProperty : m_Preconditions) {
@@ -212,7 +224,7 @@ bool GOAPEvadeEnemy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 }
 bool GOAPEvadeEnemy::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	if (m_EvadeTimer >= m_EvadeTime) 
+	if (m_EvadeTimer >= m_EvadeTime)
 	{
 		Agent* pAgent = nullptr;
 		// Check if agent data is valid
@@ -260,4 +272,23 @@ void GOAPEvadeEnemy::InitEffects(GOAPPlanner* pPlanner)
 		// State doesn't exist, add the state with some default starter value
 		pWorldState->AddState(pEnemyWasInSight->propertyKey, pEnemyWasInSight->value.bValue);
 	}
+}
+
+GOAPSurvive::GOAPSurvive(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner)
+{
+}
+
+bool GOAPSurvive::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	return false;
+}
+
+void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
+{
+
+}
+
+void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner)
+{
 }
