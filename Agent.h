@@ -71,8 +71,11 @@ private:
 
 	// Private functions
 	void Initialize();
-	void AddWorldStates();
-	void InitGOAP();
+	void InitializeWorldState();
+	void InitializeBlackboard();
+	void InitializeBehaviors();
+	void InitializeGOAP();
+	void InitializeFSM();
 	void DeleteBehaviors();
 };
 

@@ -27,6 +27,9 @@
     <ClCompile Include="WorldState.cpp">
       <Filter>Custom\World</Filter>
     </ClCompile>
+    <ClCompile Include="ActionSearchAlgorithm.cpp">
+      <Filter>Custom\GOAP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Plugin.h" />
@@ -66,6 +69,9 @@
     </ClInclude>
     <ClInclude Include="WorldState.h">
       <Filter>Custom\World</Filter>
+    </ClInclude>
+    <ClInclude Include="ActionSearchAlgorithm.h">
+      <Filter>Custom\GOAP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -130,24 +130,57 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 
 void Agent::Initialize()
 {
-	// Add the world states
-	AddWorldStates();
-
+	// InitializeWorldState
+	InitializeWorldState();
 	// Blackboard
+	InitializeBlackboard();
+	// Behaviors
+	InitializeBehaviors();
+	// Initialize GOAP
+	InitializeGOAP();
+	// FSM
+	InitializeFSM();
+
+	std::cout << "Initialized\n\n\n";
+}
+
+void Agent::InitializeWorldState()
+{
+	m_pWorldState = new WorldState();
+}
+void Agent::InitializeBlackboard()
+{
 	m_pBlackboard = new Blackboard();
 	m_pBlackboard->AddData("Agent", this);
 	m_pBlackboard->AddData("LastEnemyPos", &m_LastSeenClosestEnemy);
 	m_pBlackboard->AddData("WorldState", m_pWorldState);
-
-	// Behaviors
+}
+void Agent::InitializeBehaviors()
+{
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
 	m_pDodgeBehavior = new DodgeEnemy();
+}
+void Agent::InitializeGOAP()
+{
+	// GOAP planner
+	m_pGOAPPlanner = new GOAPPlanner(m_pWorldState);
 
-	// Initialize GOAP
-	InitGOAP();
+	/// GOAP Actions
+	// GOAPMoveTo
+	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
+	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
+	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
+	m_pActions.push_back(pGOAPExploreWorldAction);
+	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
+	m_pActions.push_back(pGOAPEvadeEnemy);
+	//...
 
-	// States and transitions
+	// Let the planner know all the action this agent can do
+	m_pGOAPPlanner->AddActions(m_pActions);
+}
+void Agent::InitializeFSM()
+{
 	IdleState* pIdleState = new IdleState();
 	GoToState* pGoToState = new GoToState();
 	PerformState* pPerformState = new PerformState();
@@ -171,32 +204,6 @@ void Agent::Initialize()
 	m_pFiniteStateMachine->AddTransition(pPerformState, pIdleState, performedTransition);
 
 	m_pDecisionMaking = m_pFiniteStateMachine;
-}
-
-void Agent::AddWorldStates()
-{
-	m_pWorldState = new WorldState();
-	m_pWorldState->AddState("EnemyInSight", false);
-}
-
-void Agent::InitGOAP()
-{
-	// GOAP planner
-	m_pGOAPPlanner = new GOAPPlanner();
-	m_pGOAPPlanner->SetWorldState(m_pWorldState);
-
-	/// GOAP Actions
-	// GOAPMoveTo
-	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
-	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
-	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
-	m_pActions.push_back(pGOAPExploreWorldAction);
-	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
-	m_pActions.push_back(pGOAPEvadeEnemy);
-	//...
-
-	// Let the planner know all the action this agent can do
-	m_pGOAPPlanner->AddActions(m_pActions);
 }
 
 void Agent::DeleteBehaviors()

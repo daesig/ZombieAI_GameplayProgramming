@@ -9,8 +9,7 @@
 // ---------------------------
 // Base class GOAPAction
 GOAPAction::GOAPAction(GOAPPlanner* pPlanner)
-{
-}
+{}
 GOAPAction::~GOAPAction()
 {
 	Cleanup();
@@ -20,7 +19,7 @@ bool GOAPAction::HasEffect(GOAPProperty* pPrecondition)
 	bool hasEffect{ false };
 	for (GOAPProperty* pEffect : m_Effects)
 	{
-		if (pEffect->propertyKey == pPrecondition->propertyKey) 
+		if (pEffect->propertyKey == pPrecondition->propertyKey)
 		{
 			hasEffect = true;
 		}
@@ -29,18 +28,58 @@ bool GOAPAction::HasEffect(GOAPProperty* pPrecondition)
 }
 void GOAPAction::Cleanup()
 {
-	for (GOAPProperty* pProperty : m_Preconditions) {
+	for (GOAPProperty* pProperty : m_Preconditions)
+	{
 		delete pProperty;
 		pProperty = nullptr;
 	}
-	for (GOAPProperty* pProperty : m_Effects) {
+	for (GOAPProperty* pProperty : m_Effects)
+	{
 		delete pProperty;
 		pProperty = nullptr;
 	}
 }
 // ---------------------------
 
+// GOAPSurvive, GOAL NODE for planner
+// Preconditions: SurviveTest(true)
+// Effects: None
+GOAPSurvive::GOAPSurvive(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner)
+{
+	InitPreConditions(pPlanner);
+	InitEffects(pPlanner);
+}
+bool GOAPSurvive::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	return true;
+}
+void GOAPSurvive::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	std::cout << "Setting up GOAPSurvive\n";
+}
+void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
+{
+	// Get a reference to the world states
+	WorldState* pWorldState = pPlanner->GetWorldState();
+
+	// Create states
+	// House in sight state
+	GOAPProperty* pCondition = new GOAPProperty{ "SurviveTest", true };
+	m_Preconditions.push_back(pCondition);
+
+	// Make sure the states exist in the world
+	if (!pWorldState->DoesStateExist(pCondition->propertyKey))
+	{
+		// State doesn't exist, add the state with some default starter value
+		pWorldState->AddState(pCondition->propertyKey, false);
+	}
+}
+void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner){}
+
 // Explore world action
+// Preconditions: InitialHouseScoutDone(true)
+// Effects: SurviveTest(true)
 GOAPExploreWorldAction::GOAPExploreWorldAction(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner)
 {
@@ -69,7 +108,7 @@ bool GOAPExploreWorldAction::RequiresMovement(IExamInterface* pInterface, GOAPPl
 	Elite::Vector2 agentPosition = agentInfo.Position;
 	float distanceToPosition = agentPosition.Distance(moveTarget.Position);
 
-	// Check if the movement if fullfilled
+	// Check if the movement is fullfilled
 	if (distanceToPosition < m_MovementFulfilledRange)
 		return false;
 
@@ -83,8 +122,25 @@ void GOAPExploreWorldAction::InitPreConditions(GOAPPlanner* pPlanner)
 
 	// Create states
 	// House in sight state
-	GOAPProperty* pHouseInSight = new GOAPProperty{ "HouseInSight", false };
+	GOAPProperty* pHouseInSight = new GOAPProperty{ "InitialHouseScoutDone", true };
 	m_Preconditions.push_back(pHouseInSight);
+
+	// Make sure the states exist in the world
+	if (!pWorldState->DoesStateExist(pHouseInSight->propertyKey))
+	{
+		// State doesn't exist, add the state with some default starter value
+		pWorldState->AddState(pHouseInSight->propertyKey, false);
+	}
+}
+void GOAPExploreWorldAction::InitEffects(GOAPPlanner* pPlanner)
+{
+	// Get a reference to the world states
+	WorldState* pWorldState = pPlanner->GetWorldState();
+
+	// Create states
+	// House in sight state
+	GOAPProperty* pHouseInSight = new GOAPProperty{ "SurviveTest", true };
+	m_Effects.push_back(pHouseInSight);
 
 	// Make sure the states exist in the world
 	if (!pWorldState->DoesStateExist(pHouseInSight->propertyKey))
@@ -95,6 +151,8 @@ void GOAPExploreWorldAction::InitPreConditions(GOAPPlanner* pPlanner)
 }
 
 // Find general house locations action
+// Preconditions: InitialHouseScoutDone(false)
+// Effects: InitialHouseScoutDone(true)
 GOAPFindGeneralHouseLocationsAction::GOAPFindGeneralHouseLocationsAction(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner)
 {
@@ -191,6 +249,9 @@ bool GOAPFindGeneralHouseLocationsAction::CheckEffects(IExamInterface* pInterfac
 	return false;
 }
 
+// GOAPEvadeEnemy
+// Preconditions: EnemyWasInSight(true)
+// Effects: EnemyWasInSight(false)
 GOAPEvadeEnemy::GOAPEvadeEnemy(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner)
 {
@@ -272,23 +333,4 @@ void GOAPEvadeEnemy::InitEffects(GOAPPlanner* pPlanner)
 		// State doesn't exist, add the state with some default starter value
 		pWorldState->AddState(pEnemyWasInSight->propertyKey, pEnemyWasInSight->value.bValue);
 	}
-}
-
-GOAPSurvive::GOAPSurvive(GOAPPlanner* pPlanner) :
-	GOAPAction(pPlanner)
-{
-}
-
-bool GOAPSurvive::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return false;
-}
-
-void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
-{
-
-}
-
-void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner)
-{
 }

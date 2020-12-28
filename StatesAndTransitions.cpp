@@ -23,7 +23,6 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 }
 void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
-	std::cout << "Idle update\n";
 	// Don't need a new plan if we have a next action
 	if (m_HasNext)
 		return;
@@ -36,6 +35,8 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 
 		// Plan the action until one is found
 		pPlanner->PlanAction();
+
+		std::cout << "Idle update\n";
 	}
 	else
 		m_ActionTimer -= deltaTime;

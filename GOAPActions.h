@@ -62,6 +62,7 @@ class GOAPSurvive : public GOAPAction
 public:
 	GOAPSurvive(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
@@ -80,7 +81,7 @@ private:
 	std::vector<Elite::Vector2> m_LocationsOfInterest{};
 
 	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
-	virtual void InitEffects(GOAPPlanner* pPlanner) override {};
+	virtual void InitEffects(GOAPPlanner* pPlanner) override;
 };
 
 class GOAPFindGeneralHouseLocationsAction final : public GOAPAction

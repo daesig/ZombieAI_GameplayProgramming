@@ -19,17 +19,18 @@ struct GOAPProperty
 	} value;
 };
 
+class GOAPAction;
 struct NodeRecord
 {
 	GOAPAction* pAction;
-	GOAPAction* pConnectedAction;
+	NodeRecord* pConnectedNode;
 	float costSoFar = 0.f;
 	float estimatedTotalCost = 0.f;
 
 	bool operator==(const NodeRecord& other) const
 	{
 		return pAction == other.pAction
-			&& pConnectedAction == other.pConnectedAction
+			&& pConnectedNode == other.pConnectedNode
 			&& costSoFar == other.costSoFar
 			&& estimatedTotalCost == other.estimatedTotalCost;
 	};

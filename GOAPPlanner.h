@@ -2,18 +2,18 @@
 #include "GOAPActions.h"
 #include <vector>
 
+class ActionSearchAlgorithm;
 class WorldState;
 class GOAPPlanner
 {
 public:
-	GOAPPlanner();
+	GOAPPlanner(WorldState* pWorldState);
 	~GOAPPlanner();
 
 	void PlanAction();
 	GOAPAction* GetAction() const;
 	void NextAction();
 
-	void SetWorldState(WorldState* pWorldState);
 	WorldState* GetWorldState();
 
 	void AddAction(GOAPAction* pAction);
@@ -25,6 +25,5 @@ private:
 	int m_CurrentActionIndex = 0;
 
 	GOAPSurvive* m_pGoalAction = nullptr;
-
-	float GetHeuristicCost(GOAPAction* pAction);
+	ActionSearchAlgorithm* m_pSearchAlgorithm = nullptr;
 };

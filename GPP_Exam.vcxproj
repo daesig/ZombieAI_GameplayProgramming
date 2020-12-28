@@ -182,6 +182,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActionSearchAlgorithm.h" />
     <ClInclude Include="Agent.h" />
     <ClInclude Include="Blackboard.h" />
     <ClInclude Include="DecisionMaking.h" />
@@ -198,6 +199,7 @@
     <ClInclude Include="WorldState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActionSearchAlgorithm.cpp" />
     <ClCompile Include="Agent.cpp" />
     <ClCompile Include="FSMState.cpp" />
     <ClCompile Include="GOAPActions.cpp" />

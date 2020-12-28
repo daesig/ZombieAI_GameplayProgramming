@@ -1,11 +1,15 @@
 #include "stdafx.h"
 #include "GOAPPlanner.h"
+#include "WorldState.h"
+#include "ActionSearchAlgorithm.h"
 
-GOAPPlanner::GOAPPlanner():
+GOAPPlanner::GOAPPlanner(WorldState* pWorldState) :
 	m_pActions{},
-	m_CurrentActionIndex{ 0 }
+	m_CurrentActionIndex{ 0 },
+	m_pWorldState{ pWorldState }
 {
 	m_pGoalAction = new GOAPSurvive(this);
+	m_pSearchAlgorithm = new ActionSearchAlgorithm(m_pWorldState);
 }
 
 GOAPPlanner::~GOAPPlanner()
@@ -19,26 +23,7 @@ void GOAPPlanner::PlanAction()
 	// Reset queue of actions
 	m_pActionQueue.empty();
 
-	// TODO: Obtain the best path towards the goal according to the current world state
-	std::vector<NodeRecord> openList{};
-	std::vector<NodeRecord> closedList{};
-
-	// Setup the start node
-	NodeRecord currentRecord;
-	currentRecord.pAction = m_pGoalAction;
-	currentRecord.pConnectedAction = nullptr;
-	currentRecord.costSoFar = 0.f;
-	currentRecord.estimatedTotalCost = GetHeuristicCost(m_pGoalAction);
-	openList.push_back(currentRecord);
-
-	// Loop through the open list
-	while (!openList.empty()) 
-	{
-		for (NodeRecord& nr : openList) 
-		{
-
-		}
-	}
+	m_pActionQueue = m_pSearchAlgorithm->Search(m_pGoalAction, m_pActions);
 
 	// TODO: implement AStar pathfinding for GOAP goals
 		// Step 1. Start at goal node (what we want to achieve)
@@ -90,18 +75,19 @@ void GOAPPlanner::PlanAction()
 						// Precon: InitialHouseScoutDone (false)
 						// Effect: InitialHouseScoutDone (true)
 
-	for (GOAPAction* pAction : m_pActions) 
-	{
-		if (pAction->GetCost() == 2.f)
-			m_pActionQueue.push(pAction);
-	}
+	//for (GOAPAction* pAction : m_pActions)
+	//{
+	//	if (pAction->GetCost() == 2.f)
+	//		m_pActionQueue.push(pAction);
+	//}
 
 	//m_pActionQueue.push(m_pActions[1]);
 }
 
 GOAPAction* GOAPPlanner::GetAction() const
 {
-	if (m_pActionQueue.size() > 0) {
+	if (m_pActionQueue.size() > 0)
+	{
 		return m_pActionQueue.front();
 	}
 
@@ -111,11 +97,6 @@ GOAPAction* GOAPPlanner::GetAction() const
 void GOAPPlanner::NextAction()
 {
 	m_pActionQueue.pop();
-}
-
-void GOAPPlanner::SetWorldState(WorldState* pWorldState)
-{
-	m_pWorldState = pWorldState;
 }
 
 WorldState* GOAPPlanner::GetWorldState()
@@ -132,45 +113,6 @@ void GOAPPlanner::AddActions(std::vector<GOAPAction*>& m_pActionsToAdd)
 {
 	for (GOAPAction* pAction : m_pActionsToAdd)
 	{
-	m_pActions.push_back(pAction);
-}
-}
-
-float GOAPPlanner::GetHeuristicCost(GOAPAction* pAction)
-{
-	float heuristicCost = 0.f;
-	bool hasPreviousAction = true;
-	GOAPAction* pCurrentAction = pAction;
-
-	std::queue<GOAPProperty*> pConditionsToCheck{};
-	for(auto precon: pCurrentAction->GetPreconditions())
-	{
-		pConditionsToCheck.push(precon);
+		m_pActions.push_back(pAction);
 	}
-
-	// As long the current action has pre conditions that have to be fulfilled
-	while (!pConditionsToCheck.empty())
-	{
-		hasPreviousAction = false;
-		heuristicCost += 1.f;
-		for (GOAPAction* pAction : m_pActions) 
-		{
-			// Get the next condition in the queue
-			GOAPProperty* pCurrentProperty = pConditionsToCheck.front();
-			// Remove it, it has been checked
-			pConditionsToCheck.pop();
-
-			// Go through the child actions and check all the conditions that it has to fullfil, add them to the queue
-			if (pAction->HasEffect(pCurrentProperty)) 
-			{
-				// As long as we find more conditions, add them to the list
-				for (auto precon : pCurrentAction->GetPreconditions())
-				{
-					pConditionsToCheck.push(precon);
-				}
-			}
-		}
-	}
-
-	return heuristicCost;
 }

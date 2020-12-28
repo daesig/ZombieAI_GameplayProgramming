@@ -4,77 +4,73 @@
 #include "structs.h"
 #include <unordered_map>
 
-class StateField
-{
-public:
-	StateField() = default;
-	virtual ~StateField() = default;
-};
-
-template <class T>
-class State final: public StateField
-{
-public:
-	State(T value)
-	{
-		m_Value = value;
-	}
-
-	T GetValue() const { return m_Value; }
-	void SetValue(T newValue) { m_Value = newValue; }
-private:
-	T m_Value;
-};
+//class StateField
+//{
+//public:
+//	StateField() = default;
+//	virtual ~StateField() = default;
+//};
+//
+//class State final : public StateField
+//{
+//public:
+//	State(bool value)
+//	{
+//		m_Value = value;
+//	}
+//
+//	bool GetValue() const { return m_Value; }
+//	void SetValue(bool newValue) { m_Value = newValue; }
+//private:
+//	bool m_Value;
+//};
 
 class WorldState
 {
 public:
 	WorldState() = default;
 
-	template <class T>
-	void AddState(const std::string& key, T value)
+	void AddState(const std::string& key, bool value)
 	{
 		auto it = m_pStates.find(key);
 		if (it == m_pStates.end())
 		{
 			std::cout << "Adding state: " << key << " \n";
-			m_pStates[key] = new State<T>(value);
+			m_pStates[key] = value;
 			return;
 		}
 		std::cout << "ERROR: State already exists\n";
 		return;
 	}
 
-	template <class T>
-	void SetState(const std::string& key, T newValue)
+	void SetState(const std::string& key, bool newValue)
 	{
 		auto it = m_pStates.find(key);
 		if (it != m_pStates.end())
 		{
-			State<T>* pState = dynamic_cast<State<T>*>(m_pStates[key]);
-			if (pState)
-			{
-				pState->SetValue(newValue);
-			}
+			m_pStates[key] = newValue;
 		}
 	}
 
-	template <class T>
-	bool GetState(const std::string& key, T& value) 
+	// Returns true if the state was found, puts the value into the reference
+	bool GetState(const std::string& key, bool& value)
 	{
 		auto it = m_pStates.find(key);
 		if (it != m_pStates.end())
 		{
-			State<T>* pState = dynamic_cast<State<T>*>(m_pStates[key]);
-			if (pState)
-			{
-				value = pState->GetValue();
-				return true;
-			}
+			value = m_pStates[key];
+			return true;
 		}
-
 		return false;
 	}
+
+	bool IsStateMet(const std::string& key, const bool value)
+	{
+		if (DoesStateExist(key))
+			return m_pStates[key] == value;
+		return false;
+	}
+
 
 	bool DoesStateExist(const std::string& key) const
 	{
@@ -86,5 +82,5 @@ public:
 		return false;
 	}
 private:
-	std::unordered_map<std::string, StateField*> m_pStates;
+	std::unordered_map<std::string, bool> m_pStates{};
 };
