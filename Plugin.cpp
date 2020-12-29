@@ -53,7 +53,7 @@ void Plugin::Update(float dt)
 		//Update target based on input
 		Elite::MouseData mouseData = m_pInterface->Input_GetMouseData(Elite::InputType::eMouseButton, Elite::InputMouseButton::eLeft);
 		const Elite::Vector2 pos = Elite::Vector2(static_cast<float>(mouseData.X), static_cast<float>(mouseData.Y));
-		m_Target = m_pInterface->Debug_ConvertScreenToWorld(pos);
+		m_pAgent->SetGoalPosition(m_pInterface->Debug_ConvertScreenToWorld(pos));
 	}
 	else if (m_pInterface->Input_IsKeyboardKeyDown(Elite::eScancode_Space))
 	{

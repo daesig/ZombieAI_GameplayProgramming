@@ -10,18 +10,13 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 {
 	ResetIdleState();
 
-	// TODO: Priority actions that replan even though other actions aren't done yet?
-	bool priorityAction = false;
-	bool dataValid = pBlackboard->GetData("PriorityAction", priorityAction);
-	if (!dataValid)
+	// The last action encountered a problem with fullfilling it's effects. Replan!
+	if (pPlanner->GetEncounteredProblem() == true)
 	{
-		std::cout << "Blackboard data in IdleState::OnEnter is invalid\n";
+		pPlanner->SetEncounteredProblem(false);
+		m_ReplanActions = true;
 		return;
 	}
-
-	// Don't get the next pending state, re-validate the plan
-	if (priorityAction)
-		return;
 
 	// Check if we came from an action
 	GOAPAction* pAction = pPlanner->GetAction();
@@ -32,6 +27,7 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 		{
 			// Next action exists
 			m_HasNext = true;
+			std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString()<<"\n";
 		}
 	}
 }
@@ -50,7 +46,7 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 		// Plan the action until one is found
 		pPlanner->PlanAction();
 
-		std::cout << "Idle update\n";
+		std::cout << "Planned actions, currentAction: " << pPlanner->GetAction()->ToString()<<"\n";
 	}
 	else
 		m_ActionTimer -= deltaTime;
@@ -59,13 +55,14 @@ void IdleState::ResetIdleState()
 {
 	m_ActionTimer = 0.f;
 	m_HasNext = false;
+	m_ReplanActions = false;
 }
 
 // GoToState: public FSMState
 void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	// Debug announcement
-	std::cout << "Entered GoToState\n";
+	//std::cout << "Entered GoToState\n";
 	// Setup the action
 	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
 
@@ -80,8 +77,23 @@ void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 		std::cout << "GoToState::OnEnter, problem fetching data from blackboard\n";
 		return;
 	}
+
 	// Set agent behavior
-	pAgent->SetBehavior(Agent::BehaviorType::SEEK);
+	pAgent->SetBehavior(BehaviorType::SEEK);
+}
+void GoToState::OnExit(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	// Get the agent
+	Agent* pAgent = nullptr;
+	bool foundData = pBlackboard->GetData("Agent", pAgent);
+	if (!foundData)
+	{
+		std::cout << "GoToState::OnExit, problem fetching data from blackboard\n";
+		return;
+	}
+
+	// Set agent behavior
+	pAgent->SetBehavior(BehaviorType::NONE);
 }
 void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
@@ -111,14 +123,21 @@ void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 // Perform state: public FSMState
 void PerformState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Entered PerformState\n";
+	//std::cout << "Entered PerformState\n";
 	// Setup the action
 	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
 }
 void PerformState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime)
 {
 	// Perform until the action is done
-	pPlanner->GetAction()->Perform(pInterface, pPlanner, pBlackboard, deltaTime);
+	bool performed = pPlanner->GetAction()->Perform(pInterface, pPlanner, pBlackboard, deltaTime);
+
+	// Check if the perform encountered a problem
+	if (!performed)
+	{
+		// Let the planner know a problem was encountered so we can replan (handled in PerformedTransition::ToTransition)
+		pPlanner->SetEncounteredProblem(true);
+	}
 }
 /// ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -140,8 +159,6 @@ bool GoToTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* pPlan
 		return true;
 
 	return false;
-
-	return true;
 }
 
 // PerformTransition: public FSMTransition
@@ -163,13 +180,20 @@ bool PerformTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* pP
 // PerformCompleteTransition: public FSMTransition
 bool PerformedTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
+	// Complete the action early if a problem was encountered
+	if (pPlanner->GetEncounteredProblem() == true)
+		return true;
+
 	GOAPAction* pAction = pPlanner->GetAction();
 
 	if (!pAction)
 		return false;
 
-	if (pAction->IsDone(pInterface, pPlanner, pBlackboard))
+	// Keep doing the action until it is done
+	if (pAction->IsDone(pInterface, pPlanner, pBlackboard)) {
+		std::cout << "Action performed\n\n";
 		return true;
+	}
 
 	return false;
 }

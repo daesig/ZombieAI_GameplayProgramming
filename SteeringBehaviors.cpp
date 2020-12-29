@@ -54,7 +54,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		// Get the angle between the goal vector and the direction towards the enemy
 		float angle = atan2(lastSeenEnemyPos->y - agentInfo.Position.y, lastSeenEnemyPos->x - agentInfo.Position.x);
 		float angleDeg = angle * 180.f / float(M_PI);
-		//std::cout << "Angle to nearest enemy: rad [" << angle << "], deg [ " << angleDeg << "], Orientation [" << agentInfo.Orientation << "]\n";
 
 		// Get the vector to the enemy
 		Elite::Vector2 v{ *lastSeenEnemyPos - agentInfo.Position };
@@ -138,4 +137,37 @@ SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, floa
 	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed=
 
 	return steering;
+}
+
+SeekItem::SeekItem():
+	SeekAndDodge()
+{}
+
+SteeringPlugin_Output SeekItem::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
+{
+	SteeringPlugin_Output steering{};
+
+	// Data 
+	Agent* pAgent = nullptr;
+	WorldState* pWorldState = nullptr;
+	Elite::Vector2* lastSeenEnemyPos{};
+
+	// Check if agent data is valid
+	bool dataValid = pBlackboard->GetData("Agent", pAgent)
+		&& pBlackboard->GetData("WorldState", pWorldState);
+	if (!dataValid) return steering;
+
+	// Determine position to go to
+	pAgent->SetGoalPosition(Elite::Vector2{ 100.f,100.f });
+	// Safely seek towards the desired position
+	steering = SeekAndDodge::CalculateSteering(pInterface, deltaT, agentInfo, pBlackboard);
+	// Check if we can pick up the item
+		// Tell the action...
+
+	return steering;
+}
+
+void SeekItem::SetItemToSeek(const eItemType& itemType)
+{
+	m_ItemTypeToSeek = itemType;
 }

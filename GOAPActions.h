@@ -8,6 +8,7 @@ class Agent;
 class Blackboard;
 class GOAPPlanner;
 class IExamInterface;
+class WorldState;
 
 class GOAPAction
 {
@@ -31,7 +32,10 @@ public:
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; }; // If yes, the GoTo state will be ran before going into Perform
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return true; };
+
+	virtual std::string ToString() const = 0;
 protected:
+	WorldState* m_pWorldState = nullptr;
 	// Conditions that have to be met in order to start this action
 	std::vector<GOAPProperty*> m_Preconditions;
 	// Effects that will be applied to the world state after completing this action
@@ -57,13 +61,46 @@ protected:
 	virtual void Cleanup();
 };
 
-class GOAPSurvive : public GOAPAction
+class GOAPSurvive final : public GOAPAction
 {
 public:
 	GOAPSurvive(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual std::string ToString() const override { return "GOAPSurvive"; };
 private:
+	virtual void InitPreConditions(GOAPPlanner* pPlanner);
+	virtual void InitEffects(GOAPPlanner* pPlanner);
+};
+
+class GOAPDrinkEnergy final : public GOAPAction
+{
+public:
+	GOAPDrinkEnergy(GOAPPlanner* pPlanner);
+	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
+	virtual std::string ToString() const override { return "GOAPDrinkEnergy"; };
+private:
+	virtual void InitPreConditions(GOAPPlanner* pPlanner);
+	virtual void InitEffects(GOAPPlanner* pPlanner);
+};
+
+class GOAPSearchForEnergy final : public GOAPAction
+{
+public:
+	GOAPSearchForEnergy(GOAPPlanner* pPlanner);
+	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
+	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return true; };
+	virtual std::string ToString() const override { return "GOAPSearchForEnergy"; };
+private:
+	GOAPProperty* pChosenCondition = nullptr;
+	std::list<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
+	std::list<HouseInfo>* m_pHouseLocations = nullptr;
+	std::list<ItemInfo>* m_pItemsOnGround = nullptr;
+
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
@@ -75,6 +112,7 @@ public:
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
+	virtual std::string ToString() const override { return "GOAPExploreWorldAction"; };
 private:
 	float m_ExploreActionRange{ 5.f };
 	float m_MovementFulfilledRange{ 3.f };
@@ -94,6 +132,7 @@ public:
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
+	virtual std::string ToString() const override { return "GOAPFindGeneralHouseLocationsAction"; };
 private:
 	float m_ExploreVicinityRadius{ 200.f };
 	float m_ExploreActionRange{ 5.f };
@@ -101,7 +140,7 @@ private:
 
 	float m_Angle{ 0.f }, m_AngleIncrement{ 5.f };
 	float m_IgnoreLocationDistance{ 5.f };
-	std::vector<Elite::Vector2> m_LocationsOfInterest{};
+	std::list<Elite::Vector2> m_HouseCornerLocations{};
 
 	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
 	virtual void InitEffects(GOAPPlanner* pPlanner) override;
@@ -122,6 +161,7 @@ public:
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override { return false; };
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
+	virtual std::string ToString() const override { return "GOAPEvadeEnemy"; };
 private:
 	float m_EvadeTime = 2.f, m_EvadeTimer = 0.f;
 

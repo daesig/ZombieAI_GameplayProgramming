@@ -62,6 +62,19 @@ private:
 	float m_DodgeAngle = 35.f; // Angle in degrees
 };
 
+class SeekItem : public SeekAndDodge
+{
+public:
+	SeekItem();
+	virtual ~SeekItem() = default;
+
+	//Wander Behavior
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+	void SetItemToSeek(const eItemType& itemType);
+private:
+	eItemType m_ItemTypeToSeek = eItemType::_LAST;
+};
+
 //WANDER
 class Wander : public ISteeringBehavior
 {

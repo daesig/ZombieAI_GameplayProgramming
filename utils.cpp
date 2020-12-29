@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "utils.h"
+#include "WorldState.h"
 
 vector<HouseInfo> utils::GetHousesInFOV(IExamInterface* pInterface)
 {
@@ -37,4 +38,16 @@ vector<EntityInfo> utils::GetEntitiesInFOV(IExamInterface* pInterface)
 	}
 
 	return vEntitiesInFOV;
+}
+
+void utils::AddActionProperty(GOAPProperty* pProperty, std::vector<GOAPProperty*>& properties, WorldState* pWorldState, bool defaultValue)
+{
+	properties.push_back(pProperty);
+
+	// Make sure the states exist in the world
+	if (!pWorldState->DoesStateExist(pProperty->propertyKey))
+	{
+		// State doesn't exist, add the state with some default starter value
+		pWorldState->AddState(pProperty->propertyKey, defaultValue);
+	}
 }

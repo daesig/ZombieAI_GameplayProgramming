@@ -21,14 +21,6 @@ public:
 	Agent();
 	~Agent();
 
-	enum class BehaviorType
-	{
-		WANDER,
-		SEEK,
-		DODGE,
-		NONE
-	};
-
 	SteeringPlugin_Output UpdateSteering(IExamInterface* pInterface, float dt);
 	void Render(IExamInterface* pExamInterface, float dt) const;
 
@@ -54,13 +46,15 @@ private:
 	Wander* m_pWanderBehavior = nullptr;
 	Seek* m_pSeekBehavior = nullptr;
 	SeekAndDodge* m_pDodgeBehavior = nullptr;
+	SeekItem* m_pSeekItemBehavior = nullptr;
 
 	// Data
 	Blackboard* m_pBlackboard = nullptr;
 	WorldState* m_pWorldState = nullptr;
 	// Exploration
-	std::vector<Elite::Vector2> m_ExploredTileLocations{};
-	std::vector<Elite::Vector2> m_ExploredHouseLocations{};
+	std::list<Elite::Vector2> m_ExploredTileLocations{};
+	std::list<HouseInfo> m_Houses{};
+	std::list<ItemInfo> m_Items{};
 	Elite::Vector2 m_GoalPosition{-100.f,-1000.f};
 	float m_ExploredLocationRefreshTime = .1f;
 	float m_ExploredLocationTimer = 0.f;
@@ -71,8 +65,8 @@ private:
 
 	// Private functions
 	void Initialize();
-	void InitializeWorldState();
 	void InitializeBlackboard();
+	void InitializeWorldState();
 	void InitializeBehaviors();
 	void InitializeGOAP();
 	void InitializeFSM();
@@ -80,7 +74,7 @@ private:
 	void DeleteFSM();
 	void DeleteGOAP();
 	void DeleteBehaviors();
-	void DeleteBlackboard();
 	void DeleteWorldState();
+	void DeleteBlackboard();
 };
 

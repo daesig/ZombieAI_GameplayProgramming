@@ -63,6 +63,12 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 
 	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
+	for (const EntityInfo& entity : vEntitiesInFOV)
+	{
+		ItemInfo item{};
+		if (entity.Type == eEntityType::ITEM)
+			pInterface->Item_GetInfo(entity, item);
+	}
 
 	// Reset worldstate
 	m_pWorldState->SetState("EnemyInSight", false);
@@ -70,7 +76,7 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	for (auto& enemyInFov : vEntitiesInFOV)
 	{
 		float distanceToEnemySq = agentInfo.Position.DistanceSquared(enemyInFov.Location);
-		if (distanceToEnemySq < closestDistanceSq) 
+		if (distanceToEnemySq < closestDistanceSq)
 		{
 			m_LastSeenClosestEnemy = enemyInFov.Location;
 			m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
@@ -123,7 +129,12 @@ void Agent::SetBehavior(BehaviorType behaviorType)
 		break;
 	case BehaviorType::DODGE:
 		m_pSteeringBehavior = m_pDodgeBehavior;
-		//m_DebugSeek = true;
+		break;
+	case BehaviorType::SEEKITEM:
+		m_pSteeringBehavior = m_pSeekItemBehavior;
+		break;
+	case BehaviorType::NONE:
+		m_pSteeringBehavior = nullptr;
 		break;
 	}
 }
@@ -159,12 +170,15 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("LastEnemyPos", &m_LastSeenClosestEnemy);
 	m_pBlackboard->AddData("WorldState", m_pWorldState);
 	m_pBlackboard->AddData("PriorityAction", false);
+	m_pBlackboard->AddData("HouseLocations", &m_Houses);
+	m_pBlackboard->AddData("ItemLocations", &m_Items);
 }
 void Agent::InitializeBehaviors()
 {
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
 	m_pDodgeBehavior = new SeekAndDodge();
+	m_pSeekItemBehavior = new SeekItem();
 }
 void Agent::InitializeGOAP()
 {
@@ -176,9 +190,13 @@ void Agent::InitializeGOAP()
 	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
+	GOAPAction* pGOAPDrinkEnergy = new GOAPDrinkEnergy(m_pGOAPPlanner);
+	GOAPAction* pGOAPSearchForItem = new GOAPSearchForEnergy(m_pGOAPPlanner);
 	m_pActions.push_back(pGOAPExploreWorldAction);
 	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
 	m_pActions.push_back(pGOAPEvadeEnemy);
+	m_pActions.push_back(pGOAPDrinkEnergy);
+	m_pActions.push_back(pGOAPSearchForItem);
 	//...
 
 	// Let the planner know all the action this agent can do
@@ -201,13 +219,18 @@ void Agent::InitializeFSM()
 
 	// FSM
 	m_pFiniteStateMachine = new FiniteStateMachine(pIdleState, nullptr, m_pGOAPPlanner, m_pBlackboard);
-	// Transitions that go towards perform
+	// The action requires movement before performing, go to GoTo state
 	m_pFiniteStateMachine->AddTransition(pIdleState, pGoToState, pGoToTransition);
+	// The action doesn't require any movement, go to perform state
 	m_pFiniteStateMachine->AddTransition(pIdleState, pPerformState, pPerformTransition);
+	// Once movement is done, perform the action
 	m_pFiniteStateMachine->AddTransition(pGoToState, pPerformState, pPerformTransition);
-	// Transitions that state completed perform
+	// Action required more movement while performing, go back to movement state
+	m_pFiniteStateMachine->AddTransition(pPerformState, pGoToState, pGoToTransition);
+	// Action IsDone, go back to idle to recalculate path or choose the next action
 	m_pFiniteStateMachine->AddTransition(pPerformState, pIdleState, performedTransition);
 
+	// Set decision making system to the finite state machine
 	m_pDecisionMaking = m_pFiniteStateMachine;
 }
 
@@ -249,6 +272,8 @@ void Agent::DeleteBehaviors()
 	m_pSeekBehavior = nullptr;
 	delete m_pDodgeBehavior;
 	m_pDodgeBehavior = nullptr;
+	delete m_pSeekItemBehavior;
+	m_pSeekItemBehavior = nullptr;
 }
 void Agent::DeleteBlackboard()
 {

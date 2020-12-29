@@ -15,6 +15,7 @@ private:
 	float m_TimePerActionCheck = .5f;
 	float m_ActionTimer = 0.f;
 	bool m_HasNext = false;
+	bool m_ReplanActions = false;
 
 	void ResetIdleState();
 };
@@ -23,6 +24,7 @@ class GoToState: public FSMState
 {
 public:
 	virtual void OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual void OnExit(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 private:
 	float m_PathRefreshDuration = 0.1f;

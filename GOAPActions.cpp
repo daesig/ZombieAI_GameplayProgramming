@@ -5,11 +5,14 @@
 #include "Blackboard.h"
 #include "WorldState.h"
 #include "Agent.h"
+#include "utils.h"
 
 // ---------------------------
 // Base class GOAPAction
 GOAPAction::GOAPAction(GOAPPlanner* pPlanner)
-{}
+{
+	m_pWorldState = pPlanner->GetWorldState();
+}
 GOAPAction::~GOAPAction()
 {
 	Cleanup();
@@ -42,11 +45,13 @@ void GOAPAction::Cleanup()
 // ---------------------------
 
 // GOAPSurvive, GOAL NODE for planner
-// Preconditions: SurviveTest(true)
+// Preconditions: HasMoreThan5Energy(true), HasMoreThan5Health(true)
+	// NoEnemiesInSpotted (true), have distant goal of finding weapon and stocking up on items
 // Effects: None
 GOAPSurvive::GOAPSurvive(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner)
 {
+	m_RequiresMovement = true;
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
 }
@@ -60,22 +65,93 @@ void GOAPSurvive::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 }
 void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
+	GOAPProperty* pEnergyCondition = new GOAPProperty{ "HasMoreThan5Energy", true };
+	utils::AddActionProperty(pEnergyCondition, m_Preconditions, m_pWorldState, false);
 
-	// Create states
-	// House in sight state
-	GOAPProperty* pCondition = new GOAPProperty{ "SurviveTest", true };
-	m_Preconditions.push_back(pCondition);
+	GOAPProperty* pHealthCondition = new GOAPProperty{ "HasMoreThan5Health", true };
+	utils::AddActionProperty(pHealthCondition, m_Preconditions, m_pWorldState, true);
 
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pCondition->propertyKey))
+	//GOAPProperty* pTestCondition = new GOAPProperty{ "SurviveTest", true };
+	//utils::AddActionProperty(pTestCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner) {}
+
+// DrinkEnergy
+// Preconditions: HasEnergyItem(true)
+// Effects: HasMoreThan5Energy(true), HasEnergyItem(false)
+GOAPDrinkEnergy::GOAPDrinkEnergy(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner)
+{
+	InitPreConditions(pPlanner);
+	InitEffects(pPlanner);
+}
+bool GOAPDrinkEnergy::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	return true;
+}
+void GOAPDrinkEnergy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	std::cout << "Setting up GOAPDrinkEnergy\n";
+}
+bool GOAPDrinkEnergy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
+{
+	return true;
+}
+void GOAPDrinkEnergy::InitPreConditions(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "HasEnergyItem", true };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPDrinkEnergy::InitEffects(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pEnergyCondition = new GOAPProperty{ "HasMoreThan5Energy", true };
+	utils::AddActionProperty(pEnergyCondition, m_Effects, m_pWorldState, true);
+}
+
+// SearchForEnergy
+// Preconditions: InitialHouseScoutDone(true) 
+// Effects: HasEnergyItem(true)
+GOAPSearchForEnergy::GOAPSearchForEnergy(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner)
+{
+	InitPreConditions(pPlanner);
+	InitEffects(pPlanner);
+}
+bool GOAPSearchForEnergy::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	return true;
+}
+void GOAPSearchForEnergy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	std::cout << "Setting up GOAPSearchForEnergy\n";
+	// Setup behavior to an item search behavior with priority for energy
+	bool dataValid = pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations)
+		&& pBlackboard->GetData("HouseLocations", m_pHouseLocations)
+		&& pBlackboard->GetData("ItemLocations", m_pItemsOnGround);
+
+	if (!dataValid)
 	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pCondition->propertyKey, false);
+		std::cout << "Error obtaining blackboard data in GOAPSearchForEnergy::Setup\n";
 	}
 }
-void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner){}
+bool GOAPSearchForEnergy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
+{
+	// Arrived at item destination, choose what to do with the item
+		// Is item energy type? 
+			// Set worldstate to effects
+		// No? Decide if we want the item and choose a new movement destination to keep searching
+	return true;
+}
+void GOAPSearchForEnergy::InitPreConditions(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPSearchForEnergy::InitEffects(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "HasEnergyItem", true };
+	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
+}
 
 // Explore world action
 // Preconditions: InitialHouseScoutDone(true) 
@@ -170,6 +246,7 @@ bool GOAPFindGeneralHouseLocationsAction::Plan(IExamInterface* pInterface, GOAPP
 void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Setting up GOAPFindGeneralHouseLocationsAction\n";
+	pBlackboard->AddData("HouseCornerLocations", &m_HouseCornerLocations);
 }
 bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
@@ -178,13 +255,13 @@ bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GO
 
 	if (locationToExplore.Distance(cornerLocation) >= m_IgnoreLocationDistance)
 	{
-		m_LocationsOfInterest.push_back(cornerLocation);
+		m_HouseCornerLocations.push_back(cornerLocation);
 	}
-
 
 	m_Angle = m_Angle + m_AngleIncrement;;
 
-	for (Elite::Vector2& loc : m_LocationsOfInterest)
+	// TODO: remove debug
+	for (Elite::Vector2& loc : m_HouseCornerLocations)
 	{
 		pInterface->Draw_Circle(loc, 2.f, Elite::Vector3{ 1.f,0.f,0.f });
 	}
@@ -207,49 +284,32 @@ bool GOAPFindGeneralHouseLocationsAction::IsDone(IExamInterface* pInterface, GOA
 {
 	// Determine if we found all the house locations
 	if (m_Angle > 360.f)
+	{
+		for (GOAPProperty* pEffect : m_Effects)
+		{
+			m_pWorldState->SetState(pEffect->propertyKey, pEffect->value.bValue);
+		}
 		return true;
+	}
 
 	return false;
 }
 void GOAPFindGeneralHouseLocationsAction::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// Requires an enemy in sight to run
-	GOAPProperty* pInitialHouseScout = new GOAPProperty{ "InitialHouseScoutDone", false };
-	m_Preconditions.push_back(pInitialHouseScout);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pInitialHouseScout->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pInitialHouseScout->propertyKey, pInitialHouseScout->value.bValue);
-	}
+	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", false };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
 }
 void GOAPFindGeneralHouseLocationsAction::InitEffects(GOAPPlanner* pPlanner)
 {
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// Requires an enemy in sight to run
-	GOAPProperty* pInitialHouseScout = new GOAPProperty{ "InitialHouseScoutDone", true };
-	m_Effects.push_back(pInitialHouseScout);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pInitialHouseScout->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pInitialHouseScout->propertyKey, pInitialHouseScout->value.bValue);
-	}
+	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
+	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
 }
 bool GOAPFindGeneralHouseLocationsAction::CheckEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	return false;
 }
 
+// TODO: make this a behavior
 // GOAPEvadeEnemy
 // Preconditions: EnemyWasInSight(true)
 // Effects: EnemyWasInSight(false)
@@ -277,7 +337,7 @@ void GOAPEvadeEnemy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 	if (!dataValid) return;
 
 	// Set agent to dodge behavior
-	pAgent->SetBehavior(Agent::BehaviorType::DODGE);
+	pAgent->SetBehavior(BehaviorType::DODGE);
 }
 bool GOAPEvadeEnemy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {

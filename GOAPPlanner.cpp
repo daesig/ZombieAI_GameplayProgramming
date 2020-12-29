@@ -24,64 +24,6 @@ void GOAPPlanner::PlanAction()
 	m_pActionQueue.empty();
 
 	m_pActionQueue = m_pSearchAlgorithm->Search(m_pGoalAction, m_pActions);
-
-	// TODO: implement AStar pathfinding for GOAP goals
-		// Step 1. Start at goal node (what we want to achieve)
-		// The thing we want to achieve has effects, it's preconditions have to be satisfied by previous node until those can also get fulfilled
-		// GOAL???????????????????????
-			// Find a path from the goal node to a previous node
-			// Use preconditions and effects to string a path together
-				// Is the path more expensive than another path?
-
-	// Goal: Survive
-		// Find houses
-		// Evade enemies
-		// Loot items
-		// Shoot enemies
-		// Avoid purge zones
-
-	// Vitals to manage:
-		// Energy (goes down over time, regen with items)
-		// Health (goes down when bitten, regen with items)
-		// Stamina (sprint)
-
-	// Action system:
-		// Survive
-		// Precon: HasMoreThanXEnergy (true), HasMoreThanXHealth (true)
-		// Effect: None (final goal action of the AI)
-			// Drink energy (cost 1)
-			// Precon: HasMoreThanXEnergy (false), HasHasEnergyPotion (true)
-			// Effect HasMoreThanXEnergy (true), HasEnergyPotion (false)
-
-			// Eat food (cost 1)
-			// Precon: HasMoreThanXHealth (false), HasFood (true)
-			// Effect HasMoreThanXHealth (true), HasFood (false)
-				// Loot Item (cost 1)
-				// Precon: IsInHouse (true), UnlootedItems (.size() > 0)
-				// [HasEnergyPotion (true), HasWeapon (true), HasFood (true)]
-					// Find House (cost 1)
-					// Precon: IsInHouse (false), InitialHouseScoutDone (true), EnemyInSight (false)
-					// Effect: IsInHouse (true)
-						// Dodge Enemy (cost 0)
-						// Precon: EnemyInSight (true), HasWeapon (false)
-						// Effect: EnemyInSight (true)
-
-						// Kill Enemy cost (1)
-						// Precon: HasGun (true)
-						// Effect: EnemyInSight (false)
-							// loot item.... find house....
-
-						// Initial House Scout (cost -100)
-						// Precon: InitialHouseScoutDone (false)
-						// Effect: InitialHouseScoutDone (true)
-
-	//for (GOAPAction* pAction : m_pActions)
-	//{
-	//	if (pAction->GetCost() == 2.f)
-	//		m_pActionQueue.push(pAction);
-	//}
-
-	//m_pActionQueue.push(m_pActions[1]);
 }
 
 GOAPAction* GOAPPlanner::GetAction() const
@@ -115,4 +57,14 @@ void GOAPPlanner::AddActions(std::vector<GOAPAction*>& m_pActionsToAdd)
 	{
 		m_pActions.push_back(pAction);
 	}
+}
+
+void GOAPPlanner::SetEncounteredProblem(bool value)
+{
+	m_EncounteredProblem = value;
+}
+
+bool GOAPPlanner::GetEncounteredProblem() const
+{
+	return m_EncounteredProblem;
 }

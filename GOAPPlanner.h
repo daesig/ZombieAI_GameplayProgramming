@@ -18,6 +18,9 @@ public:
 
 	void AddAction(GOAPAction* pAction);
 	void AddActions(std::vector<GOAPAction*>& m_pActions);
+
+	void SetEncounteredProblem(bool value);
+	bool GetEncounteredProblem() const;
 private:
 	std::vector<GOAPAction*> m_pActions{};
 	std::queue<GOAPAction*> m_pActionQueue{};
@@ -26,4 +29,6 @@ private:
 
 	GOAPSurvive* m_pGoalAction = nullptr;
 	ActionSearchAlgorithm* m_pSearchAlgorithm = nullptr;
+
+	bool m_EncounteredProblem = false;
 };

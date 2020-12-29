@@ -46,3 +46,12 @@ enum class EvadeType
 	SEEK,
 	DODGESEEK
 };
+
+enum class BehaviorType
+{
+	WANDER,
+	SEEK,
+	DODGE,
+	SEEKITEM,
+	NONE
+};
