@@ -50,6 +50,18 @@ public:
 	Elite::Vector2 GetTarget() const;
 };
 
+class SeekAndDodge : public ISteeringBehavior
+{
+public:
+	SeekAndDodge() = default;
+	virtual ~SeekAndDodge() = default;
+
+	//Wander Behavior
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+private:
+	float m_DodgeAngle = 35.f; // Angle in degrees
+};
+
 //WANDER
 class Wander : public ISteeringBehavior
 {
@@ -61,16 +73,4 @@ private:
 	float m_DistanceFromActor;
 	float m_WanderRadius;
 	float m_RenewDistance;
-};
-
-class DodgeEnemy : public ISteeringBehavior
-{
-public:
-	DodgeEnemy() = default;
-	virtual ~DodgeEnemy() = default;
-
-	//Wander Behavior
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
-private:
-	float m_DodgeAngle = 35.f; // Angle in degrees
 };

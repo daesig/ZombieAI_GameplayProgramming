@@ -31,7 +31,7 @@ class FiniteStateMachine final : public DecisionMaking
 {
 public:
 	FiniteStateMachine(FSMState* startState,IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
-	virtual ~FiniteStateMachine();
+	virtual ~FiniteStateMachine() = default;
 
 	void AddTransition(FSMState* startState, FSMState* toState, FSMTransition* transition);
 	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, float deltaT);

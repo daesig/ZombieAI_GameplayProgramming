@@ -40,3 +40,9 @@ struct NodeRecord
 		return estimatedTotalCost < other.estimatedTotalCost;
 	};
 };
+
+enum class EvadeType
+{
+	SEEK,
+	DODGESEEK
+};

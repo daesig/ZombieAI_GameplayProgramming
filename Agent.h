@@ -53,7 +53,7 @@ private:
 	DecisionMaking* m_pDecisionMaking = nullptr;
 	Wander* m_pWanderBehavior = nullptr;
 	Seek* m_pSeekBehavior = nullptr;
-	DodgeEnemy* m_pDodgeBehavior = nullptr;
+	SeekAndDodge* m_pDodgeBehavior = nullptr;
 
 	// Data
 	Blackboard* m_pBlackboard = nullptr;
@@ -76,6 +76,11 @@ private:
 	void InitializeBehaviors();
 	void InitializeGOAP();
 	void InitializeFSM();
+
+	void DeleteFSM();
+	void DeleteGOAP();
 	void DeleteBehaviors();
+	void DeleteBlackboard();
+	void DeleteWorldState();
 };
 

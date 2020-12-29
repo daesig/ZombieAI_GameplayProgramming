@@ -78,7 +78,8 @@ void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner){}
 
 // Explore world action
-// Preconditions: InitialHouseScoutDone(true)
+// Preconditions: InitialHouseScoutDone(true) 
+	//TODO: IsInHouse(false) 
 // Effects: SurviveTest(true)
 GOAPExploreWorldAction::GOAPExploreWorldAction(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner)
@@ -91,7 +92,7 @@ GOAPExploreWorldAction::GOAPExploreWorldAction(GOAPPlanner* pPlanner) :
 }
 bool GOAPExploreWorldAction::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	return false;
+	return true;
 }
 void GOAPExploreWorldAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -164,7 +165,7 @@ GOAPFindGeneralHouseLocationsAction::GOAPFindGeneralHouseLocationsAction(GOAPPla
 }
 bool GOAPFindGeneralHouseLocationsAction::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	return false;
+	return true;
 }
 void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -263,7 +264,7 @@ GOAPEvadeEnemy::GOAPEvadeEnemy(GOAPPlanner* pPlanner) :
 }
 bool GOAPEvadeEnemy::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	return false;
+	return true;
 }
 void GOAPEvadeEnemy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {

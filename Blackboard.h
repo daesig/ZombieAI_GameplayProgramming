@@ -34,7 +34,12 @@ public:
 	~Blackboard()
 	{
 		for (auto el : m_BlackboardData)
-			delete (el.second);
+		{
+			if (el.second)
+			{
+				delete (el.second);
+			}
+		}
 		m_BlackboardData.clear();
 	}
 

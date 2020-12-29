@@ -9,6 +9,20 @@
 void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	ResetIdleState();
+
+	// TODO: Priority actions that replan even though other actions aren't done yet?
+	bool priorityAction = false;
+	bool dataValid = pBlackboard->GetData("PriorityAction", priorityAction);
+	if (!dataValid)
+	{
+		std::cout << "Blackboard data in IdleState::OnEnter is invalid\n";
+		return;
+	}
+
+	// Don't get the next pending state, re-validate the plan
+	if (priorityAction)
+		return;
+
 	// Check if we came from an action
 	GOAPAction* pAction = pPlanner->GetAction();
 	if (pAction)

@@ -18,7 +18,11 @@ Agent::Agent()
 
 Agent::~Agent()
 {
+	DeleteFSM();
+	DeleteGOAP();
 	DeleteBehaviors();
+	DeleteBlackboard();
+	DeleteWorldState();
 }
 
 SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt)
@@ -128,6 +132,7 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 	m_pSeekBehavior->SetTarget(seekPos);
 }
 
+// Initialization
 void Agent::Initialize()
 {
 	// InitializeWorldState
@@ -143,7 +148,6 @@ void Agent::Initialize()
 
 	std::cout << "Initialized\n\n\n";
 }
-
 void Agent::InitializeWorldState()
 {
 	m_pWorldState = new WorldState();
@@ -154,12 +158,13 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("Agent", this);
 	m_pBlackboard->AddData("LastEnemyPos", &m_LastSeenClosestEnemy);
 	m_pBlackboard->AddData("WorldState", m_pWorldState);
+	m_pBlackboard->AddData("PriorityAction", false);
 }
 void Agent::InitializeBehaviors()
 {
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
-	m_pDodgeBehavior = new DodgeEnemy();
+	m_pDodgeBehavior = new SeekAndDodge();
 }
 void Agent::InitializeGOAP()
 {
@@ -206,18 +211,9 @@ void Agent::InitializeFSM()
 	m_pDecisionMaking = m_pFiniteStateMachine;
 }
 
-void Agent::DeleteBehaviors()
+// Destruction
+void Agent::DeleteFSM()
 {
-	// Blackboard
-	delete m_pBlackboard;
-	m_pBlackboard = nullptr;
-
-	// Behaviors
-	delete m_pWanderBehavior;
-	m_pWanderBehavior = nullptr;
-	delete m_pSeekBehavior;
-	m_pSeekBehavior = nullptr;
-
 	// States and transitions
 	for (FSMState* pState : m_pStates)
 	{
@@ -230,13 +226,37 @@ void Agent::DeleteBehaviors()
 		pTransition = nullptr;
 	}
 
+	delete m_pFiniteStateMachine;
+	m_pFiniteStateMachine = nullptr;
+}
+void Agent::DeleteGOAP()
+{
+	// GOAP planner
+	delete m_pGOAPPlanner;
+	m_pGOAPPlanner = nullptr;
+
 	for (GOAPAction* pAction : m_pActions)
 	{
 		delete pAction;
 		pAction = nullptr;
 	}
-
-	// GOAP planner
-	delete m_pGOAPPlanner;
-	m_pGOAPPlanner = nullptr;
+}
+void Agent::DeleteBehaviors()
+{
+	delete m_pWanderBehavior;
+	m_pWanderBehavior = nullptr;
+	delete m_pSeekBehavior;
+	m_pSeekBehavior = nullptr;
+	delete m_pDodgeBehavior;
+	m_pDodgeBehavior = nullptr;
+}
+void Agent::DeleteBlackboard()
+{
+	delete m_pBlackboard;
+	m_pBlackboard = nullptr;
+}
+void Agent::DeleteWorldState()
+{
+	delete m_pWorldState;
+	m_pWorldState = nullptr;
 }

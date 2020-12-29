@@ -9,11 +9,6 @@ FiniteStateMachine::FiniteStateMachine(FSMState* startState, IExamInterface* pIn
 	SetState(pInterface, pPlanner, startState);
 }
 
-FiniteStateMachine::~FiniteStateMachine()
-{
-	SAFE_DELETE(m_pBlackboard);
-}
-
 void FiniteStateMachine::AddTransition(FSMState* startState, FSMState* toState, FSMTransition* transition)
 {
 	auto it = m_Transitions.find(startState);
