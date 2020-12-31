@@ -43,7 +43,10 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	if (!dataValid) return steering;
 
 	bool enemyInSight = false;
-	pWorldState->GetState("EnemyInSight", enemyInSight);
+	if (!pWorldState->GetState("EnemyInSight", enemyInSight))
+	{
+		std::cout << "Failed to get worldstate\n";
+	}
 
 	// Get the position that the agent wants to go in
 	const Elite::Vector2& agentGoalPosition = pAgent->GetGoalPosition();
@@ -80,9 +83,12 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		steering.LinearVelocity = agentGoalPosition - agentInfo.Position;
 		steering.LinearVelocity.Normalize();
 		steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
-
 		steering.RunMode = false;
 	}
+
+	// Use stamina when we have enough
+	if (pInterface->Agent_GetInfo().Stamina > 9.f)
+		steering.RunMode = true;
 
 	// Debug agent velocity
 	pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
@@ -139,7 +145,7 @@ SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, floa
 	return steering;
 }
 
-SeekItem::SeekItem():
+SeekItem::SeekItem() :
 	SeekAndDodge()
 {}
 

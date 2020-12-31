@@ -29,6 +29,33 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 {
 	SteeringPlugin_Output steering{};
 
+	AgentInfo& agentInfo = pInterface->Agent_GetInfo();
+	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
+	auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
+
+	// Reset worldstate
+	m_pWorldState->SetState("EnemyInSight", false);
+	float closestDistanceSq{ FLT_MAX };
+	for (auto& enemyInFov : vEntitiesInFOV)
+	{
+		if (enemyInFov.Type == eEntityType::ENEMY)
+		{
+			float distanceToEnemySq = agentInfo.Position.DistanceSquared(enemyInFov.Location);
+			if (distanceToEnemySq < closestDistanceSq)
+			{
+				m_LastSeenClosestEnemy = enemyInFov.Location;
+				m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
+				m_pWorldState->SetState("EnemyInSight", true);
+			}
+		}
+	}
+
+	// Update explored houses time
+	for (ExploredHouse& h : m_Houses)
+	{
+		h.timeSinceExplored += dt;
+	}
+
 	// Update FSM states
 	if (m_pDecisionMaking)
 	{
@@ -37,12 +64,10 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	}
 
 	// Steer
-	AgentInfo agentInfo = pInterface->Agent_GetInfo();
 	if (m_pSteeringBehavior)
 	{
 		steering = m_pSteeringBehavior->CalculateSteering(pInterface, dt, agentInfo, m_pBlackboard);
 	}
-
 
 	// Update known locations
 	if (m_ExploredLocationTimer >= m_ExploredLocationRefreshTime)
@@ -61,28 +86,12 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	}
 	m_ExploredLocationTimer += dt;
 
-	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
-	auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
-	for (const EntityInfo& entity : vEntitiesInFOV)
-	{
-		ItemInfo item{};
-		if (entity.Type == eEntityType::ITEM)
-			pInterface->Item_GetInfo(entity, item);
-	}
-
-	// Reset worldstate
-	m_pWorldState->SetState("EnemyInSight", false);
-	float closestDistanceSq{ FLT_MAX };
-	for (auto& enemyInFov : vEntitiesInFOV)
-	{
-		float distanceToEnemySq = agentInfo.Position.DistanceSquared(enemyInFov.Location);
-		if (distanceToEnemySq < closestDistanceSq)
-		{
-			m_LastSeenClosestEnemy = enemyInFov.Location;
-			m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
-			m_pWorldState->SetState("EnemyInSight", true);
-		}
-	}
+	//for (const EntityInfo& entity : vEntitiesInFOV)
+	//{
+	//	ItemInfo item{};
+	//	if (entity.Type == eEntityType::ITEM)
+	//		pInterface->Item_GetInfo(entity, item);
+	//}
 
 	//for (auto& e : vEntitiesInFOV)
 	//{
@@ -127,13 +136,10 @@ void Agent::SetBehavior(BehaviorType behaviorType)
 		m_pSteeringBehavior = m_pSeekBehavior;
 		m_DebugSeek = true;
 		break;
-	case BehaviorType::DODGE:
-		m_pSteeringBehavior = m_pDodgeBehavior;
+	case BehaviorType::SEEKDODGE:
+		m_pSteeringBehavior = m_pSeekDodgeBehavior;
 		break;
-	case BehaviorType::SEEKITEM:
-		m_pSteeringBehavior = m_pSeekItemBehavior;
-		break;
-	case BehaviorType::NONE:
+	default:
 		m_pSteeringBehavior = nullptr;
 		break;
 	}
@@ -162,6 +168,7 @@ void Agent::Initialize()
 void Agent::InitializeWorldState()
 {
 	m_pWorldState = new WorldState();
+	m_pWorldState->AddState("EnemyInSight", false);
 }
 void Agent::InitializeBlackboard()
 {
@@ -177,7 +184,7 @@ void Agent::InitializeBehaviors()
 {
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
-	m_pDodgeBehavior = new SeekAndDodge();
+	m_pSeekDodgeBehavior = new SeekAndDodge();
 	m_pSeekItemBehavior = new SeekItem();
 }
 void Agent::InitializeGOAP()
@@ -270,8 +277,8 @@ void Agent::DeleteBehaviors()
 	m_pWanderBehavior = nullptr;
 	delete m_pSeekBehavior;
 	m_pSeekBehavior = nullptr;
-	delete m_pDodgeBehavior;
-	m_pDodgeBehavior = nullptr;
+	delete m_pSeekDodgeBehavior;
+	m_pSeekDodgeBehavior = nullptr;
 	delete m_pSeekItemBehavior;
 	m_pSeekItemBehavior = nullptr;
 }

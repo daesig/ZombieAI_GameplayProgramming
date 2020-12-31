@@ -3,6 +3,7 @@
 #include "IExamInterface.h"
 #include "SteeringBehaviors.h"
 #include "WorldState.h"
+#include <unordered_map>
 
 // Planning
 class GOAPPlanner;
@@ -45,7 +46,7 @@ private:
 	DecisionMaking* m_pDecisionMaking = nullptr;
 	Wander* m_pWanderBehavior = nullptr;
 	Seek* m_pSeekBehavior = nullptr;
-	SeekAndDodge* m_pDodgeBehavior = nullptr;
+	SeekAndDodge* m_pSeekDodgeBehavior = nullptr;
 	SeekItem* m_pSeekItemBehavior = nullptr;
 
 	// Data
@@ -53,7 +54,7 @@ private:
 	WorldState* m_pWorldState = nullptr;
 	// Exploration
 	std::list<Elite::Vector2> m_ExploredTileLocations{};
-	std::list<HouseInfo> m_Houses{};
+	std::vector<ExploredHouse> m_Houses{};
 	std::list<ItemInfo> m_Items{};
 	Elite::Vector2 m_GoalPosition{-100.f,-1000.f};
 	float m_ExploredLocationRefreshTime = .1f;

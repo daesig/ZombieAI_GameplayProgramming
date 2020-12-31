@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include "Exam_HelperStructs.h"
+
+class GOAPAction;
 
 struct GOAPProperty
 {
@@ -19,7 +22,6 @@ struct GOAPProperty
 	} value;
 };
 
-class GOAPAction;
 struct NodeRecord
 {
 	GOAPAction* pAction;
@@ -41,6 +43,12 @@ struct NodeRecord
 	};
 };
 
+struct ExploredHouse
+{
+	HouseInfo houseInfo;
+	float timeSinceExplored;
+};
+
 enum class EvadeType
 {
 	SEEK,
@@ -51,7 +59,7 @@ enum class BehaviorType
 {
 	WANDER,
 	SEEK,
-	DODGE,
+	SEEKDODGE,
 	SEEKITEM,
 	NONE
 };

@@ -108,11 +108,224 @@ void GOAPDrinkEnergy::InitEffects(GOAPPlanner* pPlanner)
 	utils::AddActionProperty(pEnergyCondition, m_Effects, m_pWorldState, true);
 }
 
+// GOAPSearchItem: public GOAPAction
+GOAPSearchItem::GOAPSearchItem(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner)
+{}
+bool GOAPSearchItem::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	return true;
+}
+void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	std::cout << "Setting up GOAPSearchItem\n";
+	// Setup behavior to an item search behavior with priority for energy
+	bool dataValid = pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations)
+		&& pBlackboard->GetData("HouseLocations", m_pHouseLocations)
+		&& pBlackboard->GetData("ItemLocations", m_pItemsOnGround)
+		&& pBlackboard->GetData("Agent", m_pAgent);
+
+	if (!dataValid)
+	{
+		std::cout << "Error obtaining blackboard data in GOAPSearchItem::Setup\n";
+		return;
+	}
+
+	ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
+	m_pAgent->SetBehavior(BehaviorType::SEEKDODGE);
+}
+bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
+{
+	auto vEntitiesInFov = utils::GetEntitiesInFOV(pInterface);
+	auto vHousesInFOV = utils::GetHousesInFOV(pInterface);
+
+	for (EntityInfo& entity : vEntitiesInFov)
+	{
+		if (entity.Type == eEntityType::ITEM)
+		{
+			ItemInfo itemInfo;
+			pInterface->Item_GetInfo(entity, itemInfo);
+			auto foundIt = std::find_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&itemInfo](ItemInfo& item)
+				{
+					return item.Location == itemInfo.Location;
+				}
+			);
+
+			// New item found!
+			if (foundIt == m_pItemsOnGround->end())
+			{
+				std::cout << "Item found!\n";
+				m_pItemsOnGround->push_back(itemInfo);
+			}
+		}
+	}
+
+	// Go over all houses in vision
+	for (HouseInfo& house : vHousesInFOV)
+	{
+		// See if we have already memorized the house location
+		auto foundIterator = std::find_if(m_pHouseLocations->begin(), m_pHouseLocations->end(), [&house](ExploredHouse& exploredHouse)
+			{
+				return house.Center == exploredHouse.houseInfo.Center;
+			}
+		);
+
+		// House does not exist yet
+		if (foundIterator == m_pHouseLocations->end())
+		{
+			// Add the house to the known locations
+			m_pHouseLocations->push_back(ExploredHouse{ house, FLT_MAX });
+			std::cout << "Houses explored: " << m_pHouseLocations->size() << "\n";
+			// Remove all corner locations of this house
+			RemoveExploredCornerLocations(house);
+			// Choose a new seek location
+			ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
+		}
+	}
+
+	if (CheckArrival(pInterface, pPlanner, pBlackboard))
+	{
+		ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
+	}
+
+	// Debug seek location
+	pInterface->Draw_SolidCircle(m_pAgent->GetGoalPosition(), 3.f, {}, { 0.f,1.f,1.f });
+
+	// Debug corner locations
+	for (const Elite::Vector2& c : *m_pHouseCornerLocations)
+	{
+		pInterface->Draw_SolidCircle(c, 2.f, {}, { 0.f,0.f,1.f });
+	}
+	pInterface->Draw_SolidCircle(distantGoalPos, 2.f, {}, { 1.f, 0.f, 0.f });
+
+	return true;
+}
+bool GOAPSearchItem::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
+{
+	return false;
+}
+void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	Elite::Vector2 destination{};
+	const Elite::Vector2& agentPos = pInterface->Agent_GetInfo().Position;
+
+	std::vector<ExploredHouse*> possibleHouses{};
+	for (ExploredHouse& h : *m_pHouseLocations)
+	{
+		if (h.timeSinceExplored > m_HouseExploreCooldown)
+			possibleHouses.push_back(&h);
+	}
+
+	if (possibleHouses.size() > 0)
+	{
+		float closestHouseDistanceFromAgentSquared{ FLT_MAX };
+		ExploredHouse* pClosestHouse = nullptr;
+		for (ExploredHouse* h : possibleHouses)
+		{
+			float distanceToAgentSquared = agentPos.DistanceSquared(h->houseInfo.Center);
+			if (distanceToAgentSquared < closestHouseDistanceFromAgentSquared)
+			{
+				closestHouseDistanceFromAgentSquared = distanceToAgentSquared;
+				pClosestHouse = h;
+			}
+		}
+
+		if (pClosestHouse)
+		{
+			distantGoalPos = pClosestHouse->houseInfo.Center;
+			destination = pInterface->NavMesh_GetClosestPathPoint(pClosestHouse->houseInfo.Center);
+		}
+		else
+			std::cout << "Error finding path to house\n";
+	}
+	else
+	{
+		float closestCornerDistanceFromAgentSquared{ FLT_MAX };
+		Elite::Vector2 closestCorner{};
+		if (m_pHouseCornerLocations->size() > 0)
+		{
+			for (const Elite::Vector2& cornerLoc : (*m_pHouseCornerLocations))
+			{
+				float distanceToAgentSquared = agentPos.DistanceSquared(cornerLoc);
+
+				if (distanceToAgentSquared < closestCornerDistanceFromAgentSquared)
+				{
+					closestCornerDistanceFromAgentSquared = distanceToAgentSquared;
+					closestCorner = cornerLoc;
+				}
+			}
+
+			distantGoalPos = closestCorner;
+			destination = pInterface->NavMesh_GetClosestPathPoint(closestCorner);
+		}
+		else
+		{
+			std::cout << "no more corners\n";
+		}
+	}
+
+	m_pAgent->SetGoalPosition(destination);
+}
+bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	const Elite::Vector2& agentPos = pInterface->Agent_GetInfo().Position;
+
+	//Check if agent is in house
+	for (ExploredHouse& h : *m_pHouseLocations)
+	{
+		float housePadding{ 4.f };
+		float marginX{ h.houseInfo.Size.x / housePadding };
+		float marginY{ h.houseInfo.Size.y / housePadding };
+		float halfWidth = h.houseInfo.Size.x / 2.f;
+		float halfHeight = h.houseInfo.Size.y / 2.f;
+		// Check if agent location is in the house
+		if ((agentPos.x + housePadding < h.houseInfo.Center.x + halfWidth) && (agentPos.x - housePadding > h.houseInfo.Center.x - halfWidth) &&
+			(agentPos.y + housePadding < h.houseInfo.Center.y + halfHeight) && (agentPos.y - housePadding > h.houseInfo.Center.y - halfHeight))
+		{
+			std::cout << "Agent is in house\n";
+			h.timeSinceExplored = 0.f;
+			return true;
+		}
+	}
+
+	if (agentPos.DistanceSquared(m_pAgent->GetGoalPosition()) < m_ArrivalRange * m_ArrivalRange)
+	{
+		std::cout << "Arrived\n";
+		return true;
+	}
+
+	return false;
+}
+void GOAPSearchItem::RemoveExploredCornerLocations(HouseInfo& houseInfo)
+{
+	// Remove the house corner location if it's in the explored house vicinity		
+	auto findIt = std::find_if(m_pHouseCornerLocations->begin(), m_pHouseCornerLocations->end(), [houseInfo](Elite::Vector2& pos)
+		{
+			float margin{ 3.f };
+			float halfWidth = houseInfo.Size.x / 2.f;
+			float halfHeight = houseInfo.Size.y / 2.f;
+
+			// Check if corner location is in the vicinity of a house
+			if ((pos.x - margin < houseInfo.Center.x + halfWidth) && (pos.x + margin > houseInfo.Center.x - halfWidth) &&
+				(pos.y - margin < houseInfo.Center.y + halfHeight) && (pos.y + margin > houseInfo.Center.y - halfHeight))
+			{
+				return true;
+			}
+			return false;
+		}
+	);
+
+	if (findIt != m_pHouseCornerLocations->end())
+	{
+		m_pHouseCornerLocations->erase(findIt);
+	}
+}
+
 // SearchForEnergy
 // Preconditions: InitialHouseScoutDone(true) 
 // Effects: HasEnergyItem(true)
 GOAPSearchForEnergy::GOAPSearchForEnergy(GOAPPlanner* pPlanner) :
-	GOAPAction(pPlanner)
+	GOAPSearchItem(pPlanner)
 {
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
@@ -123,24 +336,33 @@ bool GOAPSearchForEnergy::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner
 }
 void GOAPSearchForEnergy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPSearchForEnergy\n";
-	// Setup behavior to an item search behavior with priority for energy
-	bool dataValid = pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations)
-		&& pBlackboard->GetData("HouseLocations", m_pHouseLocations)
-		&& pBlackboard->GetData("ItemLocations", m_pItemsOnGround);
-
-	if (!dataValid)
-	{
-		std::cout << "Error obtaining blackboard data in GOAPSearchForEnergy::Setup\n";
-	}
+	GOAPSearchItem::Setup(pInterface, pPlanner, pBlackboard);
 }
 bool GOAPSearchForEnergy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
-	// Arrived at item destination, choose what to do with the item
-		// Is item energy type? 
-			// Set worldstate to effects
-		// No? Decide if we want the item and choose a new movement destination to keep searching
+	bool foundEnergy{ false };
+	for (ItemInfo& i : *m_pItemsOnGround)
+	{
+		if (i.Type == eItemType::FOOD)
+		{
+			//foundEnergy = true;
+		}
+	}
+
+	if (!foundEnergy)
+	{
+		bool searchItemSucceeded = GOAPSearchItem::Perform(pInterface, pPlanner, pBlackboard, dt);
+		if (!searchItemSucceeded)
+			return false;
+	}
+
+	// No problems were encountered
 	return true;
+}
+bool GOAPSearchForEnergy::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
+{
+	// Check if we found energy item
+	return GOAPSearchItem::IsDone(pInterface, pPlanner, pBlackboard);
 }
 void GOAPSearchForEnergy::InitPreConditions(GOAPPlanner* pPlanner)
 {
@@ -250,20 +472,24 @@ void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAP
 }
 bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
-	Elite::Vector2 locationToExplore{ cos(m_Angle) * m_ExploreVicinityRadius, sin(m_Angle) * m_ExploreVicinityRadius };
-	Elite::Vector2 cornerLocation = pInterface->NavMesh_GetClosestPathPoint(locationToExplore);
-
-	if (locationToExplore.Distance(cornerLocation) >= m_IgnoreLocationDistance)
+	while (m_Angle < 360.f)
 	{
-		m_HouseCornerLocations.push_back(cornerLocation);
-	}
+		Elite::Vector2 locationToExplore{ cos(m_Angle) * m_ExploreVicinityRadius, sin(m_Angle) * m_ExploreVicinityRadius };
+		Elite::Vector2 cornerLocation = pInterface->NavMesh_GetClosestPathPoint(locationToExplore);
 
-	m_Angle = m_Angle + m_AngleIncrement;;
+		if (locationToExplore.Distance(cornerLocation) >= m_IgnoreLocationDistance)
+		{
+			bool exists = false;
+			auto foundIt = std::find(m_HouseCornerLocations.begin(), m_HouseCornerLocations.end(), cornerLocation);
 
-	// TODO: remove debug
-	for (Elite::Vector2& loc : m_HouseCornerLocations)
-	{
-		pInterface->Draw_Circle(loc, 2.f, Elite::Vector3{ 1.f,0.f,0.f });
+			// Check if this location was a new location
+			if (foundIt == m_HouseCornerLocations.end())
+			{
+				m_HouseCornerLocations.push_back(cornerLocation);
+			}
+		}
+
+		m_Angle += m_AngleIncrement;
 	}
 
 	return true;
@@ -282,17 +508,13 @@ bool GOAPFindGeneralHouseLocationsAction::RequiresMovement(IExamInterface* pInte
 }
 bool GOAPFindGeneralHouseLocationsAction::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	// Determine if we found all the house locations
-	if (m_Angle > 360.f)
+	// This action will always be done after 1 frame.
+	// Apply effects
+	for (GOAPProperty* pEffect : m_Effects)
 	{
-		for (GOAPProperty* pEffect : m_Effects)
-		{
-			m_pWorldState->SetState(pEffect->propertyKey, pEffect->value.bValue);
-		}
-		return true;
+		m_pWorldState->SetState(pEffect->propertyKey, pEffect->value.bValue);
 	}
-
-	return false;
+	return true;
 }
 void GOAPFindGeneralHouseLocationsAction::InitPreConditions(GOAPPlanner* pPlanner)
 {
@@ -337,7 +559,7 @@ void GOAPEvadeEnemy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 	if (!dataValid) return;
 
 	// Set agent to dodge behavior
-	pAgent->SetBehavior(BehaviorType::DODGE);
+	pAgent->SetBehavior(BehaviorType::SEEKDODGE);
 }
 bool GOAPEvadeEnemy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
@@ -395,3 +617,4 @@ void GOAPEvadeEnemy::InitEffects(GOAPPlanner* pPlanner)
 		pWorldState->AddState(pEnemyWasInSight->propertyKey, pEnemyWasInSight->value.bValue);
 	}
 }
+

@@ -3,6 +3,7 @@
 #include "SteeringHelpers.h"
 #include "IExamInterface.h"
 #include "structs.h"
+#include <unordered_map>
 
 class Agent;
 class Blackboard;
@@ -86,21 +87,43 @@ private:
 	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
 
-class GOAPSearchForEnergy final : public GOAPAction
+class GOAPSearchItem : public GOAPAction
+{
+public:
+	GOAPSearchItem(GOAPPlanner* pPlanner);
+	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
+	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; };
+	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
+	virtual std::string ToString() const override { return "GOAPSearchItem"; };
+protected:
+	std::vector<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
+	std::vector<ExploredHouse>* m_pHouseLocations = nullptr;
+	std::list<ItemInfo>* m_pItemsOnGround = nullptr;
+private:
+	Elite::Vector2 m_selectedLocation{};
+	Agent* m_pAgent = nullptr;
+	float m_ArrivalRange = 2.f;
+	float m_HouseExploreCooldown = 20.f;
+	Elite::Vector2 distantGoalPos{};
+
+	void ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	bool CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
+	void RemoveExploredCornerLocations(HouseInfo& houseInfo);
+};
+
+class GOAPSearchForEnergy final : public GOAPSearchItem
 {
 public:
 	GOAPSearchForEnergy(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
-	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return true; };
+	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; };
+	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
 	virtual std::string ToString() const override { return "GOAPSearchForEnergy"; };
 private:
-	GOAPProperty* pChosenCondition = nullptr;
-	std::list<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
-	std::list<HouseInfo>* m_pHouseLocations = nullptr;
-	std::list<ItemInfo>* m_pItemsOnGround = nullptr;
-
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
@@ -134,13 +157,13 @@ public:
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
 	virtual std::string ToString() const override { return "GOAPFindGeneralHouseLocationsAction"; };
 private:
-	float m_ExploreVicinityRadius{ 200.f };
+	float m_ExploreVicinityRadius{ 300.f };
 	float m_ExploreActionRange{ 5.f };
 	float m_MovementFulfilledRange{ 3.f };
 
 	float m_Angle{ 0.f }, m_AngleIncrement{ 5.f };
 	float m_IgnoreLocationDistance{ 5.f };
-	std::list<Elite::Vector2> m_HouseCornerLocations{};
+	std::vector<Elite::Vector2> m_HouseCornerLocations{};
 
 	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
 	virtual void InitEffects(GOAPPlanner* pPlanner) override;

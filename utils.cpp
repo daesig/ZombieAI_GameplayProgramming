@@ -51,3 +51,8 @@ void utils::AddActionProperty(GOAPProperty* pProperty, std::vector<GOAPProperty*
 		pWorldState->AddState(pProperty->propertyKey, defaultValue);
 	}
 }
+
+inline bool utils::IsPointInHouse(const Elite::Vector2& point, const HouseInfo& house, float margin)
+{
+	return true;
+}
