@@ -105,7 +105,7 @@ protected:
 private:
 	Elite::Vector2 m_selectedLocation{};
 	float m_ArrivalRange = 2.f;
-	float m_HouseExploreCooldown = 150.f;
+	float m_HouseExploreCooldown = 300.f;
 	Elite::Vector2 distantGoalPos{};
 	Elite::Vector2 m_HouseGoalPos{};
 
@@ -158,11 +158,11 @@ public:
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
 	virtual std::string ToString() const override { return "GOAPFindGeneralHouseLocationsAction"; };
 private:
-	float m_ExploreVicinityRadius{ 100.f };
+	float m_ExploreVicinityRadius{ 50.f };
 	float m_ExploreActionRange{ 5.f };
 	float m_MovementFulfilledRange{ 3.f };
 
-	int m_Loops{ 4 };
+	int m_Loops{ 3 };
 	int m_TimesLooped{ 0 };
 	float m_RangeIncrease{ 50.f };
 	float m_Angle{ 0.f }, m_AngleIncrement{ 10.f };

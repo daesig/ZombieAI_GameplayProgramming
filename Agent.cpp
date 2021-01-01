@@ -81,7 +81,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 		auto it = std::find(m_ExploredTileLocations.begin(), m_ExploredTileLocations.end(), currentPosition);
 		if (it == m_ExploredTileLocations.end())
 		{
-			m_ExploredTileLocations.push_back(currentPosition);
+			//m_ExploredTileLocations.push_back(currentPosition);
 			//std::cout << "Explored new position: [ " << currentPosition.x << ", " << currentPosition.y << " ]\n";
 		}
 		m_ExploredLocationTimer = 0.f;
@@ -184,6 +184,32 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 	// No item was grabbed, return false
 	return false;
 }
+bool Agent::ConsumeFood()
+{
+	bool success{ false };
+
+	int index{ 0 };
+	while (index < m_MaxInventorySlots)
+	{
+		ItemInfo inventoryItem;
+		bool itemFound = m_pInterface->Inventory_GetItem(index, inventoryItem);
+		if (itemFound)
+		{
+			if (inventoryItem.Type == eItemType::FOOD)
+			{
+				success = m_pInterface->Inventory_UseItem(index);
+				if (success)
+					m_pWorldState->SetState("HasFood", false);
+				else
+					std::cout << "Failed to consume food\n";
+				break;
+			}
+		}
+		++index;
+	}
+
+	return success;
+}
 bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
 {
 	int index{ 0 };
@@ -198,6 +224,7 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
 	{
 		ItemInfo itemInCurrentSlot{};
 		bool itemFound = m_pInterface->Inventory_GetItem(index, itemInCurrentSlot);
+
 		// Found an empty inventory slot
 		if (!itemFound)
 		{
@@ -249,8 +276,8 @@ int Agent::GetItemStackSize(ItemInfo& itemInfo) const
 	switch (itemInfo.Type)
 	{
 	case eItemType::FOOD:
-		break;
 		stackSize = m_pInterface->Food_GetEnergy(itemInfo);
+		break;
 	case eItemType::MEDKIT:
 		stackSize = m_pInterface->Medkit_GetHealth(itemInfo);
 		break;

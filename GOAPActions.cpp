@@ -95,7 +95,13 @@ void GOAPDrinkEnergy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, B
 }
 bool GOAPDrinkEnergy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
-	return true;
+	Agent* pAgent = nullptr;
+	bool dataValid = pBlackboard->GetData("Agent", pAgent);
+	if (!dataValid)
+		return false;
+
+	bool consumedFood = pAgent->ConsumeFood();
+	return consumedFood;
 }
 void GOAPDrinkEnergy::InitPreConditions(GOAPPlanner* pPlanner)
 {
@@ -240,7 +246,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			if (pClosestItem)
 			{
 				distantGoalPos = pClosestItem->Location;
-				std::cout << "Set goal pos to closest item\n";
 				destination = pInterface->NavMesh_GetClosestPathPoint(distantGoalPos);
 				foundPath = true;
 			}
@@ -277,7 +282,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			{
 				distantGoalPos = pClosestHouse->houseInfo.Center;
 				m_HouseGoalPos = pClosestHouse->houseInfo.Center;
-				std::cout << "Set goal pos to closest house\n";
 				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestHouse->houseInfo.Center);
 				foundPath = true;
 			}
@@ -305,7 +309,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			}
 
 			distantGoalPos = closestCorner;
-			std::cout << "Set goal pos to closest corner\n";
 			destination = pInterface->NavMesh_GetClosestPathPoint(closestCorner);
 			foundPath = true;
 		}
@@ -357,10 +360,13 @@ bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlan
 }
 void GOAPSearchItem::RemoveExploredCornerLocations(HouseInfo& houseInfo)
 {
+	int found{ 0 };
+	int houseIndex{ 0 };
+	std::vector<int> indexesToRemove{};
 	// Remove the house corner location if it's in the explored house vicinity		
-	auto findIt = std::find_if(m_pHouseCornerLocations->begin(), m_pHouseCornerLocations->end(), [houseInfo](Elite::Vector2& pos)
+	auto findIt = std::remove_if(m_pHouseCornerLocations->begin(), m_pHouseCornerLocations->end(), [houseInfo, &found, &houseIndex, &indexesToRemove](Elite::Vector2& pos)
 		{
-			float margin{ 3.f };
+			float margin{ 5.f };
 			float halfWidth = houseInfo.Size.x / 2.f;
 			float halfHeight = houseInfo.Size.y / 2.f;
 
@@ -368,16 +374,25 @@ void GOAPSearchItem::RemoveExploredCornerLocations(HouseInfo& houseInfo)
 			if ((pos.x - margin < houseInfo.Center.x + halfWidth) && (pos.x + margin > houseInfo.Center.x - halfWidth) &&
 				(pos.y - margin < houseInfo.Center.y + halfHeight) && (pos.y + margin > houseInfo.Center.y - halfHeight))
 			{
+				indexesToRemove.push_back(houseIndex);
+				++found;
+				++houseIndex;
 				return true;
 			}
+			++houseIndex;
 			return false;
 		}
 	);
 
-	if (findIt != m_pHouseCornerLocations->end())
-		m_pHouseCornerLocations->erase(findIt);
+	std::cout << "Removed corners << " << found << " \n";
+	std::cout << "last index:  << " << m_pHouseCornerLocations->size() << " \n";
+	for (int index : indexesToRemove)
+	{
+		std::cout << "removed index: " << index << "\n";
+	}
 
-	std::cout << "Removed corners\n";
+	if (findIt != m_pHouseCornerLocations->end())
+		m_pHouseCornerLocations->erase(findIt, m_pHouseCornerLocations->end());
 }
 
 // SearchForEnergy
@@ -577,6 +592,8 @@ bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GO
 			m_ExploreVicinityRadius += m_RangeIncrease;
 		}
 	}
+
+	
 
 	return true;
 }

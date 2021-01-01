@@ -30,6 +30,7 @@ public:
 	void SetSeekPos(Elite::Vector2 seekPos);
 
 	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface);
+	bool ConsumeFood();
 
 	const Elite::Vector2& GetGoalPosition() const { return m_GoalPosition; };
 	void SetGoalPosition(const Elite::Vector2& goalPosition) { m_GoalPosition = goalPosition; };

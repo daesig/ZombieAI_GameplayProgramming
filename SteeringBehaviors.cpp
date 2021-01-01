@@ -51,6 +51,8 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	// Get the position that the agent wants to go in
 	const Elite::Vector2& agentGoalPosition = pAgent->GetGoalPosition();
 	const Elite::Vector2 agentToGoalVec{ agentGoalPosition - agentInfo.Position };
+	Elite::Vector2 normal = agentToGoalVec;
+	float distance = normal.Normalize();
 
 	if (enemyInSight)
 	{
@@ -61,7 +63,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		// Get the vector to the enemy
 		Elite::Vector2 v{ *lastSeenEnemyPos - agentInfo.Position };
 		// Mirror the toEnemy vector over the agent direction to obtain a dodge velocity
-		const Elite::Vector2 normal = agentToGoalVec.GetNormalized();
+		//const Elite::Vector2 normal = agentToGoalVec.GetNormalized();
 		const double perp = 2.0 * v.Dot(normal);
 		Elite::Vector2 reflectDir = v - (perp * normal);
 		reflectDir.x *= -1.f;
@@ -74,7 +76,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 		steering.RunMode = true;
 
-		//pInterface->Draw_Direction(agentInfo.Position, toEnemy, 5.f, Elite::Vector3{ 1.f,0.f,0.f });
 		pInterface->Draw_Direction(agentInfo.Position, reflectDir, 5.f, Elite::Vector3{ 0.f,0.f,1.f });
 	}
 	else
@@ -86,9 +87,16 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		steering.RunMode = false;
 	}
 
-	// Use stamina when we have enough
-	if (pInterface->Agent_GetInfo().Stamina > 9.f)
-		steering.RunMode = true;
+	if (distance < 4.f)
+	{
+		steering.LinearVelocity *= .5f;
+	}
+	else
+	{
+		// Use stamina when we have enough
+		if (pInterface->Agent_GetInfo().Stamina > 9.f)
+			steering.RunMode = true;
+	}
 
 	// Debug agent velocity
 	pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
@@ -164,7 +172,6 @@ SteeringPlugin_Output SeekItem::CalculateSteering(IExamInterface* pInterface, fl
 	if (!dataValid) return steering;
 
 	// Determine position to go to
-	pAgent->SetGoalPosition(Elite::Vector2{ 100.f,100.f });
 	// Safely seek towards the desired position
 	steering = SeekAndDodge::CalculateSteering(pInterface, deltaT, agentInfo, pBlackboard);
 	// Check if we can pick up the item
