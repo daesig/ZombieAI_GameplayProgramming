@@ -16,13 +16,6 @@ Agent::Agent(IExamInterface* pInterface) :
 	Initialize();
 	m_ExploredLocationTimer = m_ExploredLocationRefreshTime;
 	m_MaxInventorySlots = m_pInterface->Inventory_GetCapacity();
-
-	// Initialize inventory
-	for (int i = 0; i < m_MaxInventorySlots; i++)
-	{
-		m_Inventory.insert(std::pair<int, ItemInfo>(i, ItemInfo{}));
-		m_Inventory[i].Type = eItemType::_LAST;
-	}
 }
 
 Agent::~Agent()
@@ -203,40 +196,43 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
 
 	while (!handled && index < m_MaxInventorySlots)
 	{
+		ItemInfo itemInCurrentSlot{};
+		bool itemFound = m_pInterface->Inventory_GetItem(index, itemInCurrentSlot);
 		// Found an empty inventory slot
-		if (m_Inventory[index].Type == eItemType::_LAST)
+		if (!itemFound)
 		{
 			std::cout << "Added item to inventory slots: " << index << " \n";
-			m_Inventory[index].ItemHash = lootedItemInfo.ItemHash;
-			m_Inventory[index].Location = lootedItemInfo.Location;
-			m_Inventory[index].Type = lootedItemInfo.Type;
-			handled = true;
-
+			// Grab the item from the ground
 			bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			// Add the grabbed item to the inventory
 			success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+			// Process the world states
 			ProcessItemWorldState(lootedItemInfo.Type);
+			break;
 		}
 		else
 		{
-			if (m_Inventory[index].Type == lootedItemType)
+			if (itemInCurrentSlot.Type == lootedItemType)
 			{
 				std::cout << "Item already exists in inventory\n";
-				ItemInfo currentInventoryItem;
-				m_pInterface->Inventory_GetItem(index, currentInventoryItem);
-
 				// Current item stack is smaller
-				if (GetItemStackSize(currentInventoryItem) < GetItemStackSize(lootedItemInfo))
+				if (GetItemStackSize(itemInCurrentSlot) < GetItemStackSize(lootedItemInfo))
 				{
+					// Clear the current inventory slot
 					m_pInterface->Inventory_RemoveItem(index);
+					// Grab the item from the ground
 					bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+					// Add the grabbed item to the inventory
 					success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+					// Process the world states
 					ProcessItemWorldState(lootedItemInfo.Type);
-					handled = true;
+					break;
 				}
 				else
 				{
+					// Try to destroy the item
 					success = m_pInterface->Item_Destroy(entity);
-					handled = true;
+					break;
 				}
 			}
 		}

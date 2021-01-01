@@ -55,7 +55,6 @@ private:
 	// Data
 	Blackboard* m_pBlackboard = nullptr;
 	WorldState* m_pWorldState = nullptr;
-	unordered_map<int, ItemInfo> m_Inventory{};
 	int m_MaxInventorySlots{-1};
 
 	// Exploration
