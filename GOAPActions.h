@@ -100,13 +100,14 @@ public:
 protected:
 	std::vector<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
 	std::vector<ExploredHouse>* m_pHouseLocations = nullptr;
-	std::list<ItemInfo>* m_pItemsOnGround = nullptr;
+	std::list<EntityInfo>* m_pItemsOnGround = nullptr;
+	Agent* m_pAgent = nullptr;
 private:
 	Elite::Vector2 m_selectedLocation{};
-	Agent* m_pAgent = nullptr;
 	float m_ArrivalRange = 2.f;
-	float m_HouseExploreCooldown = 20.f;
+	float m_HouseExploreCooldown = 150.f;
 	Elite::Vector2 distantGoalPos{};
+	Elite::Vector2 m_HouseGoalPos{};
 
 	void ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	bool CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
@@ -157,11 +158,14 @@ public:
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
 	virtual std::string ToString() const override { return "GOAPFindGeneralHouseLocationsAction"; };
 private:
-	float m_ExploreVicinityRadius{ 300.f };
+	float m_ExploreVicinityRadius{ 100.f };
 	float m_ExploreActionRange{ 5.f };
 	float m_MovementFulfilledRange{ 3.f };
 
-	float m_Angle{ 0.f }, m_AngleIncrement{ 5.f };
+	int m_Loops{ 4 };
+	int m_TimesLooped{ 0 };
+	float m_RangeIncrease{ 50.f };
+	float m_Angle{ 0.f }, m_AngleIncrement{ 10.f };
 	float m_IgnoreLocationDistance{ 5.f };
 	std::vector<Elite::Vector2> m_HouseCornerLocations{};
 

@@ -10,10 +10,19 @@
 #include "FSMState.h"
 #include "StatesAndTransitions.h"
 
-Agent::Agent()
+Agent::Agent(IExamInterface* pInterface) :
+	m_pInterface(pInterface)
 {
 	Initialize();
 	m_ExploredLocationTimer = m_ExploredLocationRefreshTime;
+	m_MaxInventorySlots = m_pInterface->Inventory_GetCapacity();
+
+	// Initialize inventory
+	for (int i = 0; i < m_MaxInventorySlots; i++)
+	{
+		m_Inventory.insert(std::pair<int, ItemInfo>(i, ItemInfo{}));
+		m_Inventory[i].Type = eItemType::_LAST;
+	}
 }
 
 Agent::~Agent()
@@ -25,13 +34,13 @@ Agent::~Agent()
 	DeleteWorldState();
 }
 
-SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt)
+SteeringPlugin_Output Agent::UpdateSteering(float dt)
 {
 	SteeringPlugin_Output steering{};
 
-	AgentInfo& agentInfo = pInterface->Agent_GetInfo();
+	AgentInfo& agentInfo = m_pInterface->Agent_GetInfo();
 	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
-	auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
+	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	// Reset worldstate
 	m_pWorldState->SetState("EnemyInSight", false);
@@ -60,20 +69,20 @@ SteeringPlugin_Output Agent::UpdateSteering(IExamInterface* pInterface, float dt
 	if (m_pDecisionMaking)
 	{
 		//std::cout << "Updatin...\n";
-		m_pDecisionMaking->Update(pInterface, m_pGOAPPlanner, dt);
+		m_pDecisionMaking->Update(m_pInterface, m_pGOAPPlanner, dt);
 	}
 
 	// Steer
 	if (m_pSteeringBehavior)
 	{
-		steering = m_pSteeringBehavior->CalculateSteering(pInterface, dt, agentInfo, m_pBlackboard);
+		steering = m_pSteeringBehavior->CalculateSteering(m_pInterface, dt, agentInfo, m_pBlackboard);
 	}
 
 	// Update known locations
 	if (m_ExploredLocationTimer >= m_ExploredLocationRefreshTime)
 	{
 		// Get closest navmesh node
-		Elite::Vector2 currentPosition{ pInterface->NavMesh_GetClosestPathPoint(agentInfo.Position) };
+		Elite::Vector2 currentPosition{ m_pInterface->NavMesh_GetClosestPathPoint(agentInfo.Position) };
 
 		// Add the location if it doesn't exist yet
 		auto it = std::find(m_ExploredTileLocations.begin(), m_ExploredTileLocations.end(), currentPosition);
@@ -149,6 +158,129 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 	m_pSeekBehavior->SetTarget(seekPos);
 }
 
+bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface)
+{
+	// Get info
+	ItemInfo itemInfo;
+	pInterface->Item_GetInfo(i, itemInfo);
+	AgentInfo agentInfo = pInterface->Agent_GetInfo();
+
+	// Check if the item is within grabrange
+	float distanceSquared = agentInfo.Position.DistanceSquared(itemInfo.Location);
+	if (distanceSquared < agentInfo.GrabRange * agentInfo.GrabRange)
+	{
+		grabbedType = itemInfo.Type;
+
+		// Don't pick up garbage
+		if (grabbedType == eItemType::GARBAGE)
+		{
+			std::cout << "Garbage!\n";
+			pInterface->Item_Destroy(i);
+		}
+		// Non-garbage. Pick up
+		else
+		{
+			bool priority{ grabbedType == itemPriority };
+			return AddInventoryItem(i, priority);
+		}
+
+		// The item was processed, return true
+		return true;
+	}
+
+	// No item was grabbed, return false
+	return false;
+}
+bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
+{
+	int index{ 0 };
+	bool handled{ false };
+	bool success{ false };
+
+	ItemInfo lootedItemInfo;
+	m_pInterface->Item_GetInfo(entity, lootedItemInfo);
+	eItemType lootedItemType{ lootedItemInfo.Type };
+
+	while (!handled && index < m_MaxInventorySlots)
+	{
+		// Found an empty inventory slot
+		if (m_Inventory[index].Type == eItemType::_LAST)
+		{
+			std::cout << "Added item to inventory slots: " << index << " \n";
+			m_Inventory[index].ItemHash = lootedItemInfo.ItemHash;
+			m_Inventory[index].Location = lootedItemInfo.Location;
+			m_Inventory[index].Type = lootedItemInfo.Type;
+			handled = true;
+
+			bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+			ProcessItemWorldState(lootedItemInfo.Type);
+		}
+		else
+		{
+			if (m_Inventory[index].Type == lootedItemType)
+			{
+				std::cout << "Item already exists in inventory\n";
+				ItemInfo currentInventoryItem;
+				m_pInterface->Inventory_GetItem(index, currentInventoryItem);
+
+				// Current item stack is smaller
+				if (GetItemStackSize(currentInventoryItem) < GetItemStackSize(lootedItemInfo))
+				{
+					m_pInterface->Inventory_RemoveItem(index);
+					bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+					success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+					ProcessItemWorldState(lootedItemInfo.Type);
+					handled = true;
+				}
+				else
+				{
+					success = m_pInterface->Item_Destroy(entity);
+					handled = true;
+				}
+			}
+		}
+
+		++index;
+	}
+
+	return success;
+}
+int Agent::GetItemStackSize(ItemInfo& itemInfo) const
+{
+	int stackSize{ 0 };
+
+	switch (itemInfo.Type)
+	{
+	case eItemType::FOOD:
+		break;
+		stackSize = m_pInterface->Food_GetEnergy(itemInfo);
+	case eItemType::MEDKIT:
+		stackSize = m_pInterface->Medkit_GetHealth(itemInfo);
+		break;
+	case eItemType::PISTOL:
+		stackSize = m_pInterface->Weapon_GetAmmo(itemInfo);
+		break;
+	}
+
+	return stackSize;
+}
+void Agent::ProcessItemWorldState(eItemType& itemType)
+{
+	switch (itemType)
+	{
+	case eItemType::FOOD:
+		m_pWorldState->SetState("HasFood", true);
+		break;
+	case eItemType::MEDKIT:
+		m_pWorldState->SetState("HasMedkit", true);
+		break;
+	case eItemType::PISTOL:
+		m_pWorldState->SetState("HasWeapon", true);
+		break;
+	}
+}
+
 // Initialization
 void Agent::Initialize()
 {
@@ -169,6 +301,9 @@ void Agent::InitializeWorldState()
 {
 	m_pWorldState = new WorldState();
 	m_pWorldState->AddState("EnemyInSight", false);
+	m_pWorldState->AddState("HasFood", false);
+	m_pWorldState->AddState("HasMedkit", false);
+	m_pWorldState->AddState("HasWeapon", false);
 }
 void Agent::InitializeBlackboard()
 {

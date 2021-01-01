@@ -19,19 +19,22 @@ class Blackboard;
 class Agent
 {
 public:
-	Agent();
+	Agent(IExamInterface* pInterface);
 	~Agent();
 
-	SteeringPlugin_Output UpdateSteering(IExamInterface* pInterface, float dt);
+	SteeringPlugin_Output UpdateSteering(float dt);
 	void Render(IExamInterface* pExamInterface, float dt) const;
 
 	void ClearBehavior();
 	void SetBehavior(BehaviorType behaviorType);
 	void SetSeekPos(Elite::Vector2 seekPos);
 
+	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface);
+
 	const Elite::Vector2& GetGoalPosition() const { return m_GoalPosition; };
 	void SetGoalPosition(const Elite::Vector2& goalPosition) { m_GoalPosition = goalPosition; };
 private:
+	IExamInterface* m_pInterface = nullptr;
 	// Decision making 
 	std::vector<FSMState*> m_pStates{};
 	std::vector<FSMTransition*> m_pTransitions{};
@@ -52,19 +55,28 @@ private:
 	// Data
 	Blackboard* m_pBlackboard = nullptr;
 	WorldState* m_pWorldState = nullptr;
+	unordered_map<int, ItemInfo> m_Inventory{};
+	int m_MaxInventorySlots{-1};
+
 	// Exploration
 	std::list<Elite::Vector2> m_ExploredTileLocations{};
 	std::vector<ExploredHouse> m_Houses{};
-	std::list<ItemInfo> m_Items{};
+	std::list<EntityInfo> m_Items{};
 	Elite::Vector2 m_GoalPosition{-100.f,-1000.f};
 	float m_ExploredLocationRefreshTime = .1f;
 	float m_ExploredLocationTimer = 0.f;
+
 	// Enemy tracking
 	Elite::Vector2 m_LastSeenClosestEnemy{};
 
+	// Debugging
 	bool m_DebugSeek = false;
 
 	// Private functions
+	bool AddInventoryItem(const EntityInfo& item, bool priority = false);
+	int GetItemStackSize(ItemInfo& itemInfo) const;
+	void ProcessItemWorldState(eItemType& itemType);
+
 	void Initialize();
 	void InitializeBlackboard();
 	void InitializeWorldState();

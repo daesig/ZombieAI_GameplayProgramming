@@ -15,13 +15,14 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 	info.Student_FirstName = "Ortwin";
 	info.Student_LastName = "Van der Stappen";
 	info.Student_Class = "2DAE11";
+
+	m_pAgent = new Agent(m_pInterface);
 }
 
 //Called only once
 void Plugin::DllInit()
 {
 	//Called when the plugin is loaded
-	m_pAgent = new Agent();
 }
 
 //Called only once
@@ -90,7 +91,7 @@ void Plugin::Update(float dt)
 SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 {
 	auto steering = SteeringPlugin_Output();
-	steering = m_pAgent->UpdateSteering(m_pInterface, dt);
+	steering = m_pAgent->UpdateSteering(dt);
 
 	return steering;
 }
