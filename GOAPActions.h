@@ -14,7 +14,7 @@ class WorldState;
 class GOAPAction
 {
 public:
-	GOAPAction(GOAPPlanner* pPlanner);
+	GOAPAction(GOAPPlanner* pPlanner, const std::string& effectName);
 	virtual ~GOAPAction();
 
 	// Plan the action
@@ -34,8 +34,9 @@ public:
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; }; // If yes, the GoTo state will be ran before going into Perform
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return true; };
 
-	virtual std::string ToString() const = 0;
+	virtual std::string ToString() { return m_EffectName; };
 protected:
+	std::string m_EffectName{ "Undefined effect" };
 	WorldState* m_pWorldState = nullptr;
 	// Conditions that have to be met in order to start this action
 	std::vector<GOAPProperty*> m_Preconditions;
@@ -51,10 +52,7 @@ protected:
 
 	virtual void InitPreConditions(GOAPPlanner* pPlanner) = 0;
 	virtual void InitEffects(GOAPPlanner* pPlanner) = 0;
-
-	// TODO: Apply effects?
-	virtual bool CheckEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) { return true; };
-
+	virtual void ApplyEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
 	virtual bool CheckPreConditions(GOAPPlanner* pPlanner) const { return true; }; // List of pre defined pre conditions that have to be met
 	virtual bool CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) { return true; }; // Procedually check the world for conditions
 
@@ -68,20 +66,19 @@ public:
 	GOAPSurvive(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
-	virtual std::string ToString() const override { return "GOAPSurvive"; };
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
 
-class GOAPDrinkEnergy final : public GOAPAction
+class GOAPConsumeFood final : public GOAPAction
 {
 public:
-	GOAPDrinkEnergy(GOAPPlanner* pPlanner);
+	GOAPConsumeFood(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
-	virtual std::string ToString() const override { return "GOAPDrinkEnergy"; };
+	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
@@ -90,13 +87,12 @@ private:
 class GOAPSearchItem : public GOAPAction
 {
 public:
-	GOAPSearchItem(GOAPPlanner* pPlanner);
+	GOAPSearchItem(GOAPPlanner* pPlanner, const std::string effectName);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; };
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
-	virtual std::string ToString() const override { return "GOAPSearchItem"; };
 protected:
 	std::vector<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
 	std::vector<ExploredHouse>* m_pHouseLocations = nullptr;
@@ -114,16 +110,15 @@ private:
 	void RemoveExploredCornerLocations(HouseInfo& houseInfo);
 };
 
-class GOAPSearchForEnergy final : public GOAPSearchItem
+class GOAPSearchForFood final : public GOAPSearchItem
 {
 public:
-	GOAPSearchForEnergy(GOAPPlanner* pPlanner);
+	GOAPSearchForFood(GOAPPlanner* pPlanner);
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt);
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; };
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
-	virtual std::string ToString() const override { return "GOAPSearchForEnergy"; };
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
@@ -136,7 +131,6 @@ public:
 	virtual bool Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
-	virtual std::string ToString() const override { return "GOAPExploreWorldAction"; };
 private:
 	float m_ExploreActionRange{ 5.f };
 	float m_MovementFulfilledRange{ 3.f };
@@ -156,7 +150,6 @@ public:
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
-	virtual std::string ToString() const override { return "GOAPFindGeneralHouseLocationsAction"; };
 private:
 	float m_ExploreVicinityRadius{ 50.f };
 	float m_ExploreActionRange{ 5.f };
@@ -172,8 +165,6 @@ private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
 	virtual void InitEffects(GOAPPlanner* pPlanner) override;
 
-	virtual bool CheckEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-
 	virtual bool CheckPreConditions(GOAPPlanner* pPlanner) const override;
 	virtual bool CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 };
@@ -188,7 +179,6 @@ public:
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override { return false; };
 	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
-	virtual std::string ToString() const override { return "GOAPEvadeEnemy"; };
 private:
 	float m_EvadeTime = 2.f, m_EvadeTimer = 0.f;
 

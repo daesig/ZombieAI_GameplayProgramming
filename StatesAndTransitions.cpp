@@ -38,10 +38,10 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 		return;
 
 	// Only plan actions every x seconds
-	if (m_ActionTimer <= 0.f)
+	if (m_ActionTimer > m_RefreshActionTime)
 	{
 		// Reset action timer
-		m_ActionTimer = m_TimePerActionCheck;
+		m_ActionTimer = 0.f;
 
 		// Plan the action until one is found
 		pPlanner->PlanAction();
@@ -49,11 +49,11 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 		std::cout << "Planned actions, currentAction: " << pPlanner->GetAction()->ToString()<<"\n";
 	}
 	else
-		m_ActionTimer -= deltaTime;
+		m_ActionTimer += deltaTime;
 }
 void IdleState::ResetIdleState()
 {
-	m_ActionTimer = 0.f;
+	m_ActionTimer = m_RefreshActionTime;
 	m_HasNext = false;
 	m_ReplanActions = false;
 }

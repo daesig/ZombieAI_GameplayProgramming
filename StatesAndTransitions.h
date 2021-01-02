@@ -13,7 +13,8 @@ public:
 	virtual void Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float deltaTime) override;
 private:
 	float m_TimePerActionCheck = .5f;
-	float m_ActionTimer = 0.f;
+	float m_RefreshActionTime{ 1.f };
+	float m_ActionTimer = 1.f;
 	bool m_HasNext = false;
 	bool m_ReplanActions = false;
 

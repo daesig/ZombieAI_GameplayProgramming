@@ -357,8 +357,8 @@ void Agent::InitializeGOAP()
 	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
-	GOAPAction* pGOAPDrinkEnergy = new GOAPDrinkEnergy(m_pGOAPPlanner);
-	GOAPAction* pGOAPSearchForItem = new GOAPSearchForEnergy(m_pGOAPPlanner);
+	GOAPAction* pGOAPDrinkEnergy = new GOAPConsumeFood(m_pGOAPPlanner);
+	GOAPAction* pGOAPSearchForItem = new GOAPSearchForFood(m_pGOAPPlanner);
 	m_pActions.push_back(pGOAPExploreWorldAction);
 	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
 	m_pActions.push_back(pGOAPEvadeEnemy);
