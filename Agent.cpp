@@ -37,14 +37,26 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	// Manage vitals
-	if (agentInfo.Energy < 5.f)
+	if (agentInfo.Energy < 6.f)
 		m_pWorldState->SetState("RequiresFood", true);
 	if (agentInfo.Health < 8.f)
 		m_pWorldState->SetState("RequiresHealth", true);
 	if (agentInfo.Position.Distance(GetGoalPosition()) < 4.f)
 	{
-		m_pWorldState->SetState("HasMovementGoal", false);
+		m_pWorldState->SetState("HasGoal", false);
 	}
+
+	if (m_DebugTimer > m_DebugTime)
+	{
+		m_DebugTimer = 0.f;
+		// Debug
+		GOAPAction* pCurrentAction = m_pGOAPPlanner->GetAction();
+		if (pCurrentAction)
+		{
+			std::cout << "Current action: " << pCurrentAction->ToString() << "\n";
+		}
+	}
+	m_DebugTimer += dt;
 
 	// Reset worldstate
 	m_pWorldState->SetState("EnemyInSight", false);

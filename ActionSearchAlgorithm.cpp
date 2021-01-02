@@ -2,6 +2,7 @@
 #include "ActionSearchAlgorithm.h"
 #include "WorldState.h"
 #include "GOAPActions.h"
+#include "utils.h"
 
 ActionSearchAlgorithm::ActionSearchAlgorithm(WorldState* pWorldState) :
 	m_pWorldState{ pWorldState }
@@ -25,8 +26,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 	// Loop through the open list
 	while (!openlist.empty())
 	{
-		// TODO: Heuristic cost
-
+		std::cout << "Openlist size: " << openlist.size() << "\n";
 		// Check if all the preconditions have been met
 		std::vector<GOAPProperty*>& preconditions = currentRecord.pAction->GetPreconditions();
 		std::vector<GOAPProperty*> preconditionsToSatifsy{};
@@ -44,17 +44,30 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 		{
 			closedlist.push_back(currentRecord);
 			// Remove action from open list
-			for (std::vector<NodeRecord>::iterator t{ openlist.begin() }; t != openlist.end();)
-			{
-				if (*t == currentRecord)
+			auto removeIt = std::remove_if(openlist.begin(), openlist.end(), [&currentRecord](NodeRecord& nr)
 				{
-					// Remove the record
-					t = openlist.erase(t);
+					if (nr == currentRecord)
+					{
+						std::cout << "same noderecord!!!\n";
+						return nr == currentRecord;
+					}
+					return false;
 				}
-				else
-					++t;
+			);
+
+			if (removeIt != openlist.end())
+			{
+				openlist.erase(removeIt, openlist.end());
 			}
+
+			if (openlist.size() > 0)
+				currentRecord = openlist[0];
 			continue;
+		}
+
+		if (preconditionsToSatifsy.size() == 1)
+		{
+			std::cout << "break\n";
 		}
 
 		// Path wasn't found... Search for actions that fullfil the unfulfilled preconditions
@@ -62,62 +75,141 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 		std::list<GOAPProperty*> satisfiedPreconditions{};
 		for (GOAPAction* pPotentialAction : possibleActions)
 		{
+			std::list<GOAPProperty*> satisfiedPreconditionsFromAction{};
 			// Don't check with itself
 			if (pPotentialAction == currentRecord.pAction)
 				continue;
 
 			// Obtain all the effects from the potential action
-			std::vector<GOAPProperty*>& effects = pPotentialAction->GetEffects();
+			std::vector<GOAPProperty*>& potentialActionEffects = pPotentialAction->GetEffects();
 
 			// Go over all the required pre conditions of the current action
-			bool meetsAtLeastOneCondition = false;
 			for (GOAPProperty* pPrecondition : preconditionsToSatifsy)
 			{
 				// Go over all the effects and check if they satisfy a precondition
-				for (GOAPProperty* pEffect : effects)
+				for (GOAPProperty* pEffect : potentialActionEffects)
 				{
 					if (pPrecondition->propertyKey == pEffect->propertyKey)
 					{
 						if (pPrecondition->value.bValue == pEffect->value.bValue)
 						{
 							// This action has an effect that satisfies a precondition
-							meetsAtLeastOneCondition = true;
-							satisfiedPreconditions.push_back(pPrecondition);
+							satisfiedPreconditions.push_back(pPrecondition); // TODO: fill this at the end if we want the action!
+							satisfiedPreconditionsFromAction.push_back(pPrecondition);
 						}
 					}
 				}
 			}
 
-			// The potential action meets at least one precondition of the current action, add to openlist
-			if (meetsAtLeastOneCondition)
+			// The potential action meets at least one precondition of the current action
+			if (satisfiedPreconditionsFromAction.size() > 0)
 			{
-				actionsThatSatisfy.push_back(pPotentialAction);
+				bool markActionForAdd = true;
+				std::cout << "new action: " << pPotentialAction->ToString() << " meets at least 1 condition\n";
 
-				//NodeRecord nr{};
-				//nr.pAction = pPotentialAction;
-				//nr.pConnectedAction = currentRecord.pAction;
-				//nr.costSoFar = currentRecord.costSoFar + pPotentialAction->GetCost();
-				//nr.estimatedTotalCost = GetHeuristicCost(pPotentialAction);
-				//openlist.push_back(currentRecord);
+				// Check if they try to satisfy the same property
+				int index{ 0 };
+				for (GOAPAction* pPreviousAction : actionsThatSatisfy)
+				{
+					std::vector<GOAPProperty*> previousUnsatisfiedEffects{ utils::GetUnsatisfiedActionEffects(pPreviousAction->GetEffects(), m_pWorldState) };
+					std::vector<GOAPProperty*> potentialUnsatisfiedEffects{ utils::GetUnsatisfiedActionEffects(pPotentialAction->GetEffects(), m_pWorldState) };
+					// The previous action satisfies the same / less unsatisfied effects (potential action can possible be better than the previous action)
+					if (potentialUnsatisfiedEffects.size() <= previousUnsatisfiedEffects.size())
+					{
+						// Check how many of the conditions match
+						int matches{ 0 };
+						std::for_each(previousUnsatisfiedEffects.begin(), previousUnsatisfiedEffects.end(),
+							[&potentialActionEffects, &matches](GOAPProperty* previousProperty)
+							{
+								for (GOAPProperty* potentialProperty : potentialActionEffects)
+								{
+									if (potentialProperty->propertyKey == previousProperty->propertyKey)
+									{
+										if (potentialProperty->value.bValue == previousProperty->value.bValue)
+										{
+											++matches;
+										}
+									}
+								}
+							}
+						);
+
+						// The potential action covers all of the previous action's effects
+						if (matches == potentialUnsatisfiedEffects.size())
+						{
+							// We are not adding the action at this point, only replacing
+							markActionForAdd = false;
+
+							// Potential action might be better then the previous action
+							if (potentialUnsatisfiedEffects.size() >= previousUnsatisfiedEffects.size())
+							{
+								// Check if this action is cheaper
+								float previousActionCost = pPreviousAction->GetCost();
+								float potentialActionCost = pPotentialAction->GetCost();
+								if (potentialActionCost < previousActionCost)
+								{
+									// Replace the previous action with this action since it's cheaper
+									std::cout << "Replacing: " << pPreviousAction->ToString() << " with " << pPotentialAction->ToString() << "\n";
+									actionsThatSatisfy[index] = pPotentialAction;
+								}
+								// Else this one is more expensive, ignore the pPotentialAction
+								// This action matched all the effects from the previous action, stop searching deeper
+								break;
+							}
+						}
+						// Else Both actions each cover different required effects
+						markActionForAdd = true;
+					}
+					++index;
+				}
+
+				// Action is not overruled by any previous actions
+				if (markActionForAdd)
+				{
+					std::cout << "Found a new action: " << pPotentialAction->ToString() << "\n";
+					actionsThatSatisfy.push_back(pPotentialAction);
+				}
 			}
 		}
 
+		satisfiedPreconditions.sort();
+		satisfiedPreconditions.unique();
 		// Check if the correct amount of preconditions was satisfied
 		if (satisfiedPreconditions.size() >= preconditionsToSatifsy.size())
 		{
 			// Action was correctly satisfied
 			closedlist.push_back(currentRecord);
 
-			// Add all the actions that satisfy the preconditions to the openlist for further processing
-			std::for_each(actionsThatSatisfy.begin(), actionsThatSatisfy.end(), [&openlist, &currentRecord, this](GOAPAction* pAction)
+			// Sort the actions from cheapest to most expensive
+			std::sort(actionsThatSatisfy.begin(), actionsThatSatisfy.end(), [](const GOAPAction* a, const GOAPAction* b)
 				{
-					NodeRecord nr{};
-					nr.pAction = pAction;
-					//nr.pConnectedNode = currentRecord;
-					nr.costSoFar = currentRecord.costSoFar + pAction->GetCost();
-					nr.estimatedTotalCost = GetHeuristicCost(pAction);
+					return a->GetCost() > b->GetCost();
+				}
+			);
 
-					openlist.push_back(nr);
+			// Add all the actions that satisfy the preconditions to the openlist for further processing
+			std::for_each(actionsThatSatisfy.begin(), actionsThatSatisfy.end(), [&openlist, &currentRecord, &closedlist, this](GOAPAction* pAction)
+				{
+					bool exists = false;
+					for (NodeRecord& openlistRecord : openlist)
+					{
+						if (openlistRecord.pAction->ToString() == pAction->ToString())
+						{
+							std::cout << "Action already exists!!\n";
+							exists = true;
+						}
+					}
+					if (!exists)
+					{
+						NodeRecord nr{};
+						nr.pAction = pAction;
+						//nr.pConnectedNode = currentRecord;
+						nr.costSoFar = currentRecord.costSoFar + pAction->GetCost();
+						nr.estimatedTotalCost = GetHeuristicCost(pAction);
+						openlist.push_back(nr);
+						std::cout << "Added to openlist: " << pAction->ToString() << "\n";
+						std::cout << "\n";
+					}
 				}
 			);
 		}

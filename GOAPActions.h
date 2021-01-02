@@ -28,7 +28,7 @@ public:
 	std::vector<GOAPProperty*> GetEffects() { return m_Effects; };
 	bool HasEffect(GOAPProperty* pPrecondition);
 
-	float GetCost() { return m_Cost; };
+	float GetCost()const { return m_Cost; };
 	virtual Elite::Vector2 GetMoveLocation() { return moveTarget.Position; };
 
 	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const { return false; }; // If yes, the GoTo state will be ran before going into Perform
@@ -113,8 +113,11 @@ private:
 	Elite::Vector2 m_selectedLocation{};
 	float m_ArrivalRange = 2.f;
 	float m_HouseExploreCooldown = 300.f;
-	Elite::Vector2 distantGoalPos{};
 	Elite::Vector2 m_HouseGoalPos{};
+
+	// testing
+	float m_IsDoneTime = 4.f;
+	float m_IsDoneTimer = 0.f;
 
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);

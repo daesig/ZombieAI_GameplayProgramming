@@ -45,6 +45,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	// Recalculate goal pos due to all the navmesh bugs
 	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
+		std::cout << "Asking new route towards goal...\n";
 		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetGoalPosition()));
 		m_NavMeshRefreshTimer = 0.f;
 	}

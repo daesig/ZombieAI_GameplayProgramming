@@ -13,7 +13,9 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 	// The last action encountered a problem with fullfilling it's effects. Replan!
 	if (pPlanner->GetEncounteredProblem() == true)
 	{
+		std::cout << "Action encountered a problem\n";
 		pPlanner->SetEncounteredProblem(false);
+		m_ActionTimer = m_RefreshActionTime + 1.f;
 		m_ReplanActions = true;
 		return;
 	}

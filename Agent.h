@@ -33,7 +33,9 @@ public:
 	bool ConsumeItem(const eItemType& itemType);
 
 	const Elite::Vector2& GetGoalPosition() const { return m_GoalPosition; };
+	const Elite::Vector2& GetDistantGoalPosition() const { return m_DistantGoalPosition; };
 	void SetGoalPosition(const Elite::Vector2& goalPosition) { m_GoalPosition = goalPosition; };
+	void SetDistantGoalPosition(const Elite::Vector2& goalPosition) { m_DistantGoalPosition = goalPosition; };
 private:
 	IExamInterface* m_pInterface = nullptr;
 	// Decision making 
@@ -62,7 +64,8 @@ private:
 	std::list<Elite::Vector2> m_ExploredTileLocations{};
 	std::vector<ExploredHouse> m_Houses{};
 	std::list<EntityInfo> m_Items{};
-	Elite::Vector2 m_GoalPosition{-100.f,-1000.f};
+	Elite::Vector2 m_GoalPosition{ 0.f,0.f };
+	Elite::Vector2 m_DistantGoalPosition{ 0.f,0.f };
 	float m_ExploredLocationRefreshTime = .1f;
 	float m_ExploredLocationTimer = 0.f;
 
@@ -72,6 +75,8 @@ private:
 
 	// Debugging
 	bool m_DebugSeek = false;
+	float m_DebugTimer{ 2.f };
+	float m_DebugTime{ 2.f };
 
 	// Private functions
 	bool AddInventoryItem(const EntityInfo& item,bool& grabError);

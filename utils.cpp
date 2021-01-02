@@ -52,6 +52,21 @@ void utils::AddActionProperty(GOAPProperty* pProperty, std::vector<GOAPProperty*
 	}
 }
 
+std::vector<GOAPProperty*> utils::GetUnsatisfiedActionEffects(const std::vector<GOAPProperty*>& effects, WorldState* pWorldState)
+{
+	std::vector<GOAPProperty*> unsatisfiedEffects{};
+
+	for (GOAPProperty* pEffect : effects)
+	{
+		if (!pWorldState->IsStateMet(pEffect->propertyKey, pEffect->value.bValue))
+		{
+			unsatisfiedEffects.push_back(pEffect);
+		}
+	}
+
+	return unsatisfiedEffects;
+}
+
 inline bool utils::IsPointInHouse(const Elite::Vector2& point, const HouseInfo& house, float margin)
 {
 	return true;
@@ -77,7 +92,7 @@ bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 	{
 		if (hasFood)
 		{
-			needFood = true;
+			return false;
 		}
 	}
 
@@ -85,9 +100,9 @@ bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 	{
 		if (hasMedkit)
 		{
-			needHealth = true;
+			return false;
 		}
 	}
 
-	return !needFood || !needHealth;
+	return true;
 }

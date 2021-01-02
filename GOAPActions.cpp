@@ -86,7 +86,7 @@ void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 	GOAPProperty* pH2 = new GOAPProperty{ "HasMedkit", true };
 	utils::AddActionProperty(pH2, m_Preconditions, m_pWorldState, false);
 
-	GOAPProperty* pM1 = new GOAPProperty{ "HasMovementGoal", true };
+	GOAPProperty* pM1 = new GOAPProperty{ "HasGoal", true };
 	utils::AddActionProperty(pM1, m_Preconditions, m_pWorldState, false);
 
 	// If the agent has fullfilled above preconditions
@@ -186,13 +186,13 @@ void GOAPConsumeMedkit::InitEffects(GOAPPlanner* pPlanner)
 
 // GOAPSearchItem: public GOAPAction
 // Preconditions: InitialHouseScoutDone(true) 
-// Effects: HasMovementGoal(true)
+// Effects: HasGoal(true)
 GOAPSearchItem::GOAPSearchItem(GOAPPlanner* pPlanner, const std::string effectName) :
 	GOAPAction(pPlanner, effectName)
 {
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
-	m_Cost = 1.f;
+	m_Cost = 0.5f;
 }
 bool GOAPSearchItem::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -215,9 +215,13 @@ void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 
 	ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
 	m_pAgent->SetBehavior(BehaviorType::SEEKDODGE);
+
+	// Testing
+	m_IsDoneTimer = 0.f;
 }
 bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
+	m_IsDoneTimer += dt;
 	if (!utils::VitalStatisticsAreOk(m_pWorldState))
 		return false;
 
@@ -326,13 +330,13 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		pInterface->Draw_SolidCircle(c, 2.f, {}, { 0.f,0.f,1.f });
 	}
 
-	pInterface->Draw_SolidCircle(distantGoalPos, 2.f, {}, { 1.f, 0.f, 0.f });
+	pInterface->Draw_SolidCircle(m_pAgent->GetDistantGoalPosition(), 2.f, {}, { 1.f, 0.f, 0.f });
 
 	return true;
 }
 bool GOAPSearchItem::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	return true;
+	return (m_IsDoneTimer > m_IsDoneTime);
 }
 void GOAPSearchItem::InitPreConditions(GOAPPlanner* pPlanner)
 {
@@ -341,7 +345,7 @@ void GOAPSearchItem::InitPreConditions(GOAPPlanner* pPlanner)
 }
 void GOAPSearchItem::InitEffects(GOAPPlanner * pPlanner)
 {
-	GOAPProperty* pM1 = new GOAPProperty{ "HasMovementGoal", true };
+	GOAPProperty* pM1 = new GOAPProperty{ "HasGoal", true };
 	utils::AddActionProperty(pM1, m_Effects, m_pWorldState, false);
 }
 void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
@@ -369,8 +373,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 
 			if (pClosestItem)
 			{
-				distantGoalPos = pClosestItem->Location;
-				destination = pInterface->NavMesh_GetClosestPathPoint(distantGoalPos);
+				m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
+				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
 			}
 			else
 				std::cout << "Error finding path to house\n";
@@ -403,9 +407,9 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 
 			if (pClosestHouse)
 			{
-				distantGoalPos = pClosestHouse->houseInfo.Center;
 				m_HouseGoalPos = pClosestHouse->houseInfo.Center;
-				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestHouse->houseInfo.Center);
+				m_pAgent->SetDistantGoalPosition(m_HouseGoalPos);
+				destination = pInterface->NavMesh_GetClosestPathPoint(m_HouseGoalPos);
 			}
 			else
 				std::cout << "Error finding path to house\n";
@@ -443,7 +447,7 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 				}
 			}
 
-			distantGoalPos = closestCorner;
+			m_pAgent->SetDistantGoalPosition(closestCorner);
 			destination = pInterface->NavMesh_GetClosestPathPoint(closestCorner);
 			foundPath = true;
 		}
@@ -548,12 +552,19 @@ bool GOAPSearchForFood::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner
 {
 	// Check if we found energy item
 	//return GOAPSearchItem::IsDone(pInterface, pPlanner, pBlackboard);
-	return m_pWorldState->IsStateMet(m_Effects[0]->propertyKey, m_Effects[0]->value.bValue);
+
+
+	for (GOAPProperty* p : m_Effects)
+	{
+		if (p->propertyKey == "HasFood")
+		{
+			return m_pWorldState->IsStateMet(p->propertyKey, p->value.bValue);
+		}
+	}
+	return true;
 }
 void GOAPSearchForFood::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
-	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
 }
 void GOAPSearchForFood::InitEffects(GOAPPlanner* pPlanner)
 {
@@ -586,13 +597,18 @@ bool GOAPSearchForMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlan
 }
 bool GOAPSearchForMedkit::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	// Check if we found a medkit
-	return m_pWorldState->IsStateMet(m_Effects[0]->propertyKey, m_Effects[0]->value.bValue);
+	for (GOAPProperty* p : m_Effects)
+	{
+		if (p->propertyKey == "HasMedkit")
+		{
+			return m_pWorldState->IsStateMet(p->propertyKey, p->value.bValue);
+		}
+	}
+
+	return true;
 }
 void GOAPSearchForMedkit::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
-	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
 }
 void GOAPSearchForMedkit::InitEffects(GOAPPlanner* pPlanner)
 {
