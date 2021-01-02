@@ -51,6 +51,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 			}
 		}
 	}
+	m_EnemyCount = vEntitiesInFOV.size();
 
 	// Update explored houses time
 	for (ExploredHouse& h : m_Houses)
@@ -151,7 +152,7 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 	m_pSeekBehavior->SetTarget(seekPos);
 }
 
-bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface)
+bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError)
 {
 	// Get info
 	ItemInfo itemInfo;
@@ -173,8 +174,8 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 		// Non-garbage. Pick up
 		else
 		{
-			bool priority{ grabbedType == itemPriority };
-			return AddInventoryItem(i, priority);
+			//bool priority{ grabbedType == itemPriority };
+			return AddInventoryItem(i, grabError);
 		}
 
 		// The item was processed, return true
@@ -210,7 +211,7 @@ bool Agent::ConsumeFood()
 
 	return success;
 }
-bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
+bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 {
 	int index{ 0 };
 	bool handled{ false };
@@ -230,9 +231,9 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
 		{
 			std::cout << "Added item to inventory slots: " << index << " \n";
 			// Grab the item from the ground
-			bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
 			// Add the grabbed item to the inventory
-			success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+			success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 			// Process the world states
 			ProcessItemWorldState(lootedItemInfo.Type);
 			break;
@@ -248,9 +249,9 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool priority)
 					// Clear the current inventory slot
 					m_pInterface->Inventory_RemoveItem(index);
 					// Grab the item from the ground
-					bool successfulGrab = m_pInterface->Item_Grab(entity, lootedItemInfo);
+					grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
 					// Add the grabbed item to the inventory
-					success = successfulGrab && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+					success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 					// Process the world states
 					ProcessItemWorldState(lootedItemInfo.Type);
 					break;
@@ -333,6 +334,7 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard = new Blackboard();
 	m_pBlackboard->AddData("Agent", this);
 	m_pBlackboard->AddData("LastEnemyPos", &m_LastSeenClosestEnemy);
+	m_pBlackboard->AddData("EnemyCount", &m_EnemyCount);
 	m_pBlackboard->AddData("WorldState", m_pWorldState);
 	m_pBlackboard->AddData("PriorityAction", false);
 	m_pBlackboard->AddData("HouseLocations", &m_Houses);

@@ -227,18 +227,18 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 	bool foundPath = false;
 
 	// Find path to item
+	float closestItemDistanceFromAgentSquared{ FLT_MAX };
+	EntityInfo* pClosestItem = nullptr;
 	if (!foundPath)
 	{
 		if (m_pItemsOnGround->size() > 0)
 		{
-			float closestHouseDistanceFromAgentSquared{ FLT_MAX };
-			EntityInfo* pClosestItem = nullptr;
 			for (EntityInfo& i : *m_pItemsOnGround)
 			{
 				float distanceToAgentSquared = agentPos.DistanceSquared(i.Location);
-				if (distanceToAgentSquared < closestHouseDistanceFromAgentSquared)
+				if (distanceToAgentSquared < closestItemDistanceFromAgentSquared)
 				{
-					closestHouseDistanceFromAgentSquared = distanceToAgentSquared;
+					closestItemDistanceFromAgentSquared = distanceToAgentSquared;
 					pClosestItem = &i;
 				}
 			}
@@ -247,7 +247,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			{
 				distantGoalPos = pClosestItem->Location;
 				destination = pInterface->NavMesh_GetClosestPathPoint(distantGoalPos);
-				foundPath = true;
 			}
 			else
 				std::cout << "Error finding path to house\n";
@@ -255,6 +254,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 	}
 
 	// Find path to house
+	float closestHouseDistanceFromAgentSquared{ FLT_MAX };
+	ExploredHouse* pClosestHouse = nullptr;
 	if (!foundPath)
 	{
 		std::vector<ExploredHouse*> possibleHouses{};
@@ -266,8 +267,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 
 		if (possibleHouses.size() > 0)
 		{
-			float closestHouseDistanceFromAgentSquared{ FLT_MAX };
-			ExploredHouse* pClosestHouse = nullptr;
 			for (ExploredHouse* h : possibleHouses)
 			{
 				float distanceToAgentSquared = agentPos.DistanceSquared(h->houseInfo.Center);
@@ -283,11 +282,23 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 				distantGoalPos = pClosestHouse->houseInfo.Center;
 				m_HouseGoalPos = pClosestHouse->houseInfo.Center;
 				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestHouse->houseInfo.Center);
-				foundPath = true;
 			}
 			else
 				std::cout << "Error finding path to house\n";
 		}
+	}
+
+	if (pClosestItem)
+	{
+		if (closestItemDistanceFromAgentSquared < closestHouseDistanceFromAgentSquared)
+		{
+			destination = pClosestItem->Location;
+		}
+		foundPath = true;
+	}
+	else if (pClosestHouse)
+	{
+		foundPath = true;
 	}
 
 	// Found path to a house corner
@@ -420,10 +431,17 @@ bool GOAPSearchForEnergy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlan
 		for (EntityInfo& i : *m_pItemsOnGround)
 		{
 			eItemType grabbedItemType{};
-			bool grabbedItem = m_pAgent->GrabItem(i, eItemType::FOOD, grabbedItemType, pInterface);
-			if (grabbedItem)
+			bool grabError = false;
+			bool itemPickedUp = m_pAgent->GrabItem(i, eItemType::FOOD, grabbedItemType, pInterface, grabError);
+			if (itemPickedUp)
 			{
 				grabbedItems.push_back(&i);
+			}
+
+			if (!grabError)
+			{
+				//Elite::Vector2
+				std::cout << "Grab error\n";
 			}
 		}
 
@@ -593,7 +611,7 @@ bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GO
 		}
 	}
 
-	
+
 
 	return true;
 }

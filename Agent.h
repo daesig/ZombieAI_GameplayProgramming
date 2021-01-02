@@ -29,7 +29,7 @@ public:
 	void SetBehavior(BehaviorType behaviorType);
 	void SetSeekPos(Elite::Vector2 seekPos);
 
-	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface);
+	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError);
 	bool ConsumeFood();
 
 	const Elite::Vector2& GetGoalPosition() const { return m_GoalPosition; };
@@ -68,12 +68,13 @@ private:
 
 	// Enemy tracking
 	Elite::Vector2 m_LastSeenClosestEnemy{};
+	float m_EnemyCount{ 0 };
 
 	// Debugging
 	bool m_DebugSeek = false;
 
 	// Private functions
-	bool AddInventoryItem(const EntityInfo& item, bool priority = false);
+	bool AddInventoryItem(const EntityInfo& item,bool& grabError);
 	int GetItemStackSize(ItemInfo& itemInfo) const;
 	void ProcessItemWorldState(eItemType& itemType);
 

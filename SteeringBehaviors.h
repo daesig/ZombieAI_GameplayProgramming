@@ -60,6 +60,8 @@ public:
 	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
 private:
 	float m_DodgeAngle = 35.f; // Angle in degrees
+	float m_NavMeshRefreshTime{ .2f };
+	float m_NavMeshRefreshTimer{ .2f };
 };
 
 class SeekItem : public SeekAndDodge
