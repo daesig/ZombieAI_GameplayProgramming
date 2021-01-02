@@ -78,9 +78,12 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 				{
 					if (pPrecondition->propertyKey == pEffect->propertyKey)
 					{
-						// This action has an effect that satisfies a precondition
-						meetsAtLeastOneCondition = true;
-						satisfiedPreconditions.push_back(pPrecondition);
+						if (pPrecondition->value.bValue == pEffect->value.bValue)
+						{
+							// This action has an effect that satisfies a precondition
+							meetsAtLeastOneCondition = true;
+							satisfiedPreconditions.push_back(pPrecondition);
+						}
 					}
 				}
 			}
@@ -100,7 +103,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 		}
 
 		// Check if the correct amount of preconditions was satisfied
-		if (satisfiedPreconditions.size() == preconditionsToSatifsy.size())
+		if (satisfiedPreconditions.size() >= preconditionsToSatifsy.size())
 		{
 			// Action was correctly satisfied
 			closedlist.push_back(currentRecord);
@@ -141,7 +144,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 	for (auto i = closedlist.rbegin(); i != closedlist.rend(); ++i)
 	{
 		actionQueue.push(i->pAction);
-	} 
+	}
 
 	return actionQueue;
 }

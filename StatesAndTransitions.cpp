@@ -27,7 +27,7 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 		{
 			// Next action exists
 			m_HasNext = true;
-			std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString()<<"\n";
+			std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
 		}
 	}
 }
@@ -40,13 +40,16 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 	// Only plan actions every x seconds
 	if (m_ActionTimer > m_RefreshActionTime)
 	{
+		std::cout << "Searching for possible actions...\n";
 		// Reset action timer
 		m_ActionTimer = 0.f;
 
 		// Plan the action until one is found
-		pPlanner->PlanAction();
-
-		std::cout << "Planned actions, currentAction: " << pPlanner->GetAction()->ToString()<<"\n";
+		bool plannedAction = pPlanner->PlanAction();
+		if (plannedAction)
+		{
+			std::cout << "Planned actions, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
+		}
 	}
 	else
 		m_ActionTimer += deltaTime;
@@ -190,7 +193,8 @@ bool PerformedTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* 
 		return false;
 
 	// Keep doing the action until it is done
-	if (pAction->IsDone(pInterface, pPlanner, pBlackboard)) {
+	if (pAction->IsDone(pInterface, pPlanner, pBlackboard))
+	{
 		std::cout << "Action performed\n\n";
 		return true;
 	}

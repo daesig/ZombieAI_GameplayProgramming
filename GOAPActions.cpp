@@ -13,6 +13,7 @@ GOAPAction::GOAPAction(GOAPPlanner* pPlanner, const std::string& effectName):
 	m_EffectName{ effectName }
 {
 	m_pWorldState = pPlanner->GetWorldState();
+	std::cout << "Constructed action: " << m_EffectName << "\n";
 }
 GOAPAction::~GOAPAction()
 {
@@ -53,7 +54,7 @@ void GOAPAction::Cleanup()
 // ---------------------------
 
 // GOAPSurvive, GOAL NODE for planner
-// Preconditions: HasMoreThan5Energy(true), HasMoreThan5Health(true)
+// Preconditions: RequiresFood(true), RequiresHealth(true)
 	// NoEnemiesInSpotted (true), have distant goal of finding weapon and stocking up on items
 // Effects: None
 GOAPSurvive::GOAPSurvive(GOAPPlanner* pPlanner) :
@@ -73,29 +74,39 @@ void GOAPSurvive::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 }
 void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	GOAPProperty* pEnergyCondition = new GOAPProperty{ "HasMoreThan5Energy", true };
-	utils::AddActionProperty(pEnergyCondition, m_Preconditions, m_pWorldState, true);
+	// Food management
+	GOAPProperty* pE1 = new GOAPProperty{ "RequiresFood", false };
+	utils::AddActionProperty(pE1, m_Preconditions, m_pWorldState, false);
+	GOAPProperty* pE2= new GOAPProperty{ "HasFood", true};
+	utils::AddActionProperty(pE2, m_Preconditions, m_pWorldState, false);
+	
+	// Health management
+	GOAPProperty* pH1 = new GOAPProperty{ "RequiresHealth", false };
+	utils::AddActionProperty(pH1, m_Preconditions, m_pWorldState, false);
+	GOAPProperty* pH2 = new GOAPProperty{ "HasMedkit", true };
+	utils::AddActionProperty(pH2, m_Preconditions, m_pWorldState, false);
 
-	GOAPProperty* pHealthCondition = new GOAPProperty{ "HasMoreThan5Health", true };
-	utils::AddActionProperty(pHealthCondition, m_Preconditions, m_pWorldState, true);
+	GOAPProperty* pM1 = new GOAPProperty{ "HasMovementGoal", true };
+	utils::AddActionProperty(pM1, m_Preconditions, m_pWorldState, false);
+
+	// If the agent has fullfilled above preconditions
+	//GOAPProperty* pKillCondition = new GOAPProperty{ "AttemptKill", true };
+	//utils::AddActionProperty(pKillCondition, m_Preconditions, m_pWorldState, true);
 
 	//GOAPProperty* pTestCondition = new GOAPProperty{ "SurviveTest", true };
 	//utils::AddActionProperty(pTestCondition, m_Preconditions, m_pWorldState, false);
 }
 void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner) {}
 
-// DrinkEnergy
-// Preconditions: HasEnergyItem(true)
-// Effects: HasMoreThan5Energy(true), HasEnergyItem(false)
+// DrinkEnergy: public GOAPAction
+// Preconditions: HasFood(true)
+// Effects: HasFood(false), RequiresFood(false)
 GOAPConsumeFood::GOAPConsumeFood(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner, "GOAPConsumeFood")
 {
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
-}
-bool GOAPConsumeFood::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return true;
+	m_Cost = 0.f;
 }
 void GOAPConsumeFood::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -108,13 +119,12 @@ bool GOAPConsumeFood::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner,
 	if (!dataValid)
 		return false;
 
-	bool consumedFood = pAgent->ConsumeFood();
+	bool consumedFood = pAgent->ConsumeItem(eItemType::FOOD);
 	return consumedFood;
 }
 bool GOAPConsumeFood::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
 	ApplyEffects(pInterface, pPlanner, pBlackboard);
-
 	return true;
 }
 void GOAPConsumeFood::InitPreConditions(GOAPPlanner* pPlanner)
@@ -124,17 +134,66 @@ void GOAPConsumeFood::InitPreConditions(GOAPPlanner* pPlanner)
 }
 void GOAPConsumeFood::InitEffects(GOAPPlanner* pPlanner)
 {
-	GOAPProperty* pEnergyCondition = new GOAPProperty{ "HasMoreThan5Energy", true };
-	utils::AddActionProperty(pEnergyCondition, m_Effects, m_pWorldState, true);
+	GOAPProperty* pEnergyCondition = new GOAPProperty{ "RequiresFood", false };
+	utils::AddActionProperty(pEnergyCondition, m_Effects, m_pWorldState, false);
 
 	GOAPProperty* pHasFoodCondition = new GOAPProperty{ "HasFood", false };
 	utils::AddActionProperty(pHasFoodCondition, m_Effects, m_pWorldState, false);
 }
 
+// GOAPConsumeMedkit: public GOAPAction
+// Preconditions: HasMedkit(true);
+// Effects: HasMedkit(false), RequiresHealth(false)
+GOAPConsumeMedkit::GOAPConsumeMedkit(GOAPPlanner* pPlanner) :
+	GOAPAction(pPlanner, "GOAPConsumeMedkit")
+{
+	InitPreConditions(pPlanner);
+	InitEffects(pPlanner);
+	m_Cost = 0.f;
+}
+void GOAPConsumeMedkit::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+{
+	std::cout << "Setting up GOAPConsumeMedkit\n";
+}
+bool GOAPConsumeMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
+{
+	Agent* pAgent = nullptr;
+	bool dataValid = pBlackboard->GetData("Agent", pAgent);
+	if (!dataValid)
+		return false;
+
+	bool consumedMedkit = pAgent->ConsumeItem(eItemType::MEDKIT);
+	return consumedMedkit;
+}
+bool GOAPConsumeMedkit::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
+{
+	ApplyEffects(pInterface, pPlanner, pBlackboard);
+	return true;
+}
+void GOAPConsumeMedkit::InitPreConditions(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "HasMedkit", true };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPConsumeMedkit::InitEffects(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pEnergyCondition = new GOAPProperty{ "RequiresHealth", false };
+	utils::AddActionProperty(pEnergyCondition, m_Effects, m_pWorldState, false);
+
+	GOAPProperty* pHasFoodCondition = new GOAPProperty{ "HasMedkit", false };
+	utils::AddActionProperty(pHasFoodCondition, m_Effects, m_pWorldState, false);
+}
+
 // GOAPSearchItem: public GOAPAction
+// Preconditions: InitialHouseScoutDone(true) 
+// Effects: HasMovementGoal(true)
 GOAPSearchItem::GOAPSearchItem(GOAPPlanner* pPlanner, const std::string effectName) :
-	GOAPAction(pPlanner, "effectName")
-{}
+	GOAPAction(pPlanner, effectName)
+{
+	InitPreConditions(pPlanner);
+	InitEffects(pPlanner);
+	m_Cost = 1.f;
+}
 bool GOAPSearchItem::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	return true;
@@ -159,6 +218,45 @@ void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 }
 bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
+	if (!utils::VitalStatisticsAreOk(m_pWorldState))
+		return false;
+
+	if (m_pItemsOnGround->size() > 0)
+	{
+		std::vector<EntityInfo*> grabbedItems{};
+		for (EntityInfo& i : *m_pItemsOnGround)
+		{
+			eItemType grabbedItemType{};
+			bool grabError = false;
+			bool itemPickedUp = m_pAgent->GrabItem(i, eItemType::FOOD, grabbedItemType, pInterface, grabError);
+			if (itemPickedUp)
+			{
+				grabbedItems.push_back(&i);
+			}
+
+			if (!grabError)
+			{
+				// Grab error
+			}
+		}
+
+		// Remove all the grabbed items from the items on ground list
+		auto findIt = std::find_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems](EntityInfo& e)
+			{
+				for (EntityInfo* grabbedItem : grabbedItems)
+				{
+					if (grabbedItem->Location == e.Location)
+						return true;
+				}
+				return false;
+			}
+		);
+
+		// Erase found items
+		if (findIt != m_pItemsOnGround->end())
+			m_pItemsOnGround->erase(findIt);
+	}
+
 	auto vEntitiesInFov = utils::GetEntitiesInFOV(pInterface);
 	auto vHousesInFOV = utils::GetHousesInFOV(pInterface);
 
@@ -206,7 +304,6 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		{
 			// Add the house to the known locations
 			m_pHouseLocations->push_back(ExploredHouse{ house, FLT_MAX });
-			std::cout << "Houses explored: " << m_pHouseLocations->size() << "\n";
 			// Remove all corner locations of this house
 			RemoveExploredCornerLocations(house);
 			// Choose a new seek location
@@ -235,7 +332,17 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 }
 bool GOAPSearchItem::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	return false;
+	return true;
+}
+void GOAPSearchItem::InitPreConditions(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPSearchItem::InitEffects(GOAPPlanner * pPlanner)
+{
+	GOAPProperty* pM1 = new GOAPProperty{ "HasMovementGoal", true };
+	utils::AddActionProperty(pM1, m_Effects, m_pWorldState, false);
 }
 void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -371,7 +478,6 @@ bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlan
 			if ((agentPos.x + housePadding < h.houseInfo.Center.x + halfWidth) && (agentPos.x - housePadding > h.houseInfo.Center.x - halfWidth) &&
 				(agentPos.y + housePadding < h.houseInfo.Center.y + halfHeight) && (agentPos.y - housePadding > h.houseInfo.Center.y - halfHeight))
 			{
-				std::cout << "Agent is in house\n";
 				h.timeSinceExplored = 0.f;
 			}
 		}
@@ -380,7 +486,6 @@ bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlan
 	// Has the agent arrived at it's location
 	if (agentPos.DistanceSquared(m_pAgent->GetGoalPosition()) < m_ArrivalRange * m_ArrivalRange)
 	{
-		std::cout << "Arrived\n";
 		return true;
 	}
 
@@ -412,29 +517,19 @@ void GOAPSearchItem::RemoveExploredCornerLocations(HouseInfo& houseInfo)
 		}
 	);
 
-	std::cout << "Removed corners << " << found << " \n";
-	std::cout << "last index:  << " << m_pHouseCornerLocations->size() << " \n";
-	for (int index : indexesToRemove)
-	{
-		std::cout << "removed index: " << index << "\n";
-	}
-
 	if (findIt != m_pHouseCornerLocations->end())
 		m_pHouseCornerLocations->erase(findIt, m_pHouseCornerLocations->end());
 }
 
-// SearchForEnergy
+// SearchForFood: public GOAPSearchItem
 // Preconditions: InitialHouseScoutDone(true) 
-// Effects: HasEnergyItem(true)
+// Effects: HasFood(true)
 GOAPSearchForFood::GOAPSearchForFood(GOAPPlanner* pPlanner) :
 	GOAPSearchItem(pPlanner, "GOAPSearchForFood")
 {
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
-}
-bool GOAPSearchForFood::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return true;
+	m_Cost = 1.5f;
 }
 void GOAPSearchForFood::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -442,42 +537,6 @@ void GOAPSearchForFood::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner,
 }
 bool GOAPSearchForFood::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
-	if (m_pItemsOnGround->size() > 0)
-	{
-		std::vector<EntityInfo*> grabbedItems{};
-		for (EntityInfo& i : *m_pItemsOnGround)
-		{
-			eItemType grabbedItemType{};
-			bool grabError = false;
-			bool itemPickedUp = m_pAgent->GrabItem(i, eItemType::FOOD, grabbedItemType, pInterface, grabError);
-			if (itemPickedUp)
-			{
-				grabbedItems.push_back(&i);
-			}
-
-			if (!grabError)
-			{
-				//Elite::Vector2
-				std::cout << "Grab error\n";
-			}
-		}
-
-		// Remove all the grabbed items from the items on ground list
-		auto findIt = std::find_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems](EntityInfo& e)
-			{
-				for (EntityInfo* grabbedItem : grabbedItems)
-				{
-					if (grabbedItem->Location == e.Location)
-						return true;
-				}
-				return false;
-			}
-		);
-
-		// Erase found items
-		if (findIt != m_pItemsOnGround->end())
-			m_pItemsOnGround->erase(findIt);
-	}
 	bool searchItemSucceeded = GOAPSearchItem::Perform(pInterface, pPlanner, pBlackboard, dt);
 	if (!searchItemSucceeded)
 		return false;
@@ -502,78 +561,43 @@ void GOAPSearchForFood::InitEffects(GOAPPlanner* pPlanner)
 	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
 }
 
-// Explore world action
+// GOAPSearchForMedkit: public GOAPSearchItem
 // Preconditions: InitialHouseScoutDone(true) 
-	//TODO: IsInHouse(false) 
-// Effects: SurviveTest(true)
-GOAPExploreWorldAction::GOAPExploreWorldAction(GOAPPlanner* pPlanner) :
-	GOAPAction(pPlanner, "GOAPExploreWorldAction")
+// Effects: HasMedkit(true)
+GOAPSearchForMedkit::GOAPSearchForMedkit(GOAPPlanner* pPlanner):
+	GOAPSearchItem(pPlanner, "GOAPSearchForMedkit")
 {
-	std::cout << "GOAPExploreWorldAction constructed\n";
-	m_RequiresMovement = true;
-
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
+	m_Cost = 1.f;
 }
-bool GOAPExploreWorldAction::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+void GOAPSearchForMedkit::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	return true;
+	GOAPSearchItem::Setup(pInterface, pPlanner, pBlackboard);
 }
-void GOAPExploreWorldAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
+bool GOAPSearchForMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
-	std::cout << "Setting up GOAPExploreWorldAction\n";
-	// Plan where to move to considering the tile locations that have already been explored
-	// Consider explored houses and a range around the houses for a more optimal search routine
-
-	AgentInfo agentInfo = pInterface->Agent_GetInfo();
-	moveTarget.Position = agentInfo.Position + Elite::Vector2(m_ExploreActionRange * 7.f, m_ExploreActionRange * 14.f);
-}
-bool GOAPExploreWorldAction::RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
-{
-	AgentInfo agentInfo = pInterface->Agent_GetInfo();
-	Elite::Vector2 agentPosition = agentInfo.Position;
-	float distanceToPosition = agentPosition.Distance(moveTarget.Position);
-
-	// Check if the movement is fullfilled
-	if (distanceToPosition < m_MovementFulfilledRange)
+	bool searchItemSucceeded = GOAPSearchItem::Perform(pInterface, pPlanner, pBlackboard, dt);
+	if (!searchItemSucceeded)
 		return false;
 
-	// Movement required
+	// No problems were encountered
 	return true;
 }
-void GOAPExploreWorldAction::InitPreConditions(GOAPPlanner* pPlanner)
+bool GOAPSearchForMedkit::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// House in sight state
-	GOAPProperty* pHouseInSight = new GOAPProperty{ "InitialHouseScoutDone", true };
-	m_Preconditions.push_back(pHouseInSight);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pHouseInSight->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pHouseInSight->propertyKey, false);
-	}
+	// Check if we found a medkit
+	return m_pWorldState->IsStateMet(m_Effects[0]->propertyKey, m_Effects[0]->value.bValue);
 }
-void GOAPExploreWorldAction::InitEffects(GOAPPlanner* pPlanner)
+void GOAPSearchForMedkit::InitPreConditions(GOAPPlanner* pPlanner)
 {
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// House in sight state
-	GOAPProperty* pHouseInSight = new GOAPProperty{ "SurviveTest", true };
-	m_Effects.push_back(pHouseInSight);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pHouseInSight->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pHouseInSight->propertyKey, pHouseInSight->value.bValue);
-	}
+	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+}
+void GOAPSearchForMedkit::InitEffects(GOAPPlanner* pPlanner)
+{
+	GOAPProperty* pCondition = new GOAPProperty{ "HasMedkit", true };
+	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
 }
 
 // TODO: Ask world information to see how far we can scout
@@ -583,15 +607,10 @@ void GOAPExploreWorldAction::InitEffects(GOAPPlanner* pPlanner)
 GOAPFindGeneralHouseLocationsAction::GOAPFindGeneralHouseLocationsAction(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner, "GOAPFindGeneralHouseLocationsAction")
 {
-	std::cout << "GOAPFindGeneralHouseLocationsAction constructed\n";
-	m_Cost = -100.f;
+	m_Cost = 0.f;
 
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
-}
-bool GOAPFindGeneralHouseLocationsAction::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return true;
 }
 void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
@@ -660,91 +679,3 @@ void GOAPFindGeneralHouseLocationsAction::InitEffects(GOAPPlanner* pPlanner)
 	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
 	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
 }
-
-// TODO: make this a behavior
-// GOAPEvadeEnemy
-// Preconditions: EnemyWasInSight(true)
-// Effects: EnemyWasInSight(false)
-GOAPEvadeEnemy::GOAPEvadeEnemy(GOAPPlanner* pPlanner) :
-	GOAPAction(pPlanner, "GOAPEvadeEnemy")
-{
-	std::cout << "GOAPEvadeEnemy constructed\n";
-	m_Cost = 2.f;
-
-	InitPreConditions(pPlanner);
-	InitEffects(pPlanner);
-}
-bool GOAPEvadeEnemy::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return true;
-}
-void GOAPEvadeEnemy::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	std::cout << "Setting up GOAPEvadeEnemy\n";
-	m_EvadeTimer = 0.f;
-
-	Agent* pAgent = nullptr;
-	// Check if agent data is valid
-	bool dataValid = pBlackboard->GetData("Agent", pAgent);
-	if (!dataValid) return;
-
-	// Set agent to dodge behavior
-	pAgent->SetBehavior(BehaviorType::SEEKDODGE);
-}
-bool GOAPEvadeEnemy::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
-{
-	m_EvadeTimer += dt;
-	return true;
-}
-bool GOAPEvadeEnemy::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
-{
-	if (m_EvadeTimer >= m_EvadeTime)
-	{
-		Agent* pAgent = nullptr;
-		// Check if agent data is valid
-		bool dataValid = pBlackboard->GetData("Agent", pAgent);
-		if (!dataValid) return false;
-
-		// Clear the agents behavior
-		pAgent->ClearBehavior();
-
-		return true;
-	}
-
-	return false;
-}
-void GOAPEvadeEnemy::InitPreConditions(GOAPPlanner* pPlanner)
-{
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// Requires an enemy in sight to run
-	GOAPProperty* pEnemyWasInSight = new GOAPProperty{ "EnemyWasInSight", true };
-	m_Preconditions.push_back(pEnemyWasInSight);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pEnemyWasInSight->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pEnemyWasInSight->propertyKey, pEnemyWasInSight->value.bValue);
-	}
-}
-void GOAPEvadeEnemy::InitEffects(GOAPPlanner* pPlanner)
-{
-	// Get a reference to the world states
-	WorldState* pWorldState = pPlanner->GetWorldState();
-
-	// Create states
-	// Requires an enemy in sight to run
-	GOAPProperty* pEnemyWasInSight = new GOAPProperty{ "EnemyWasInSight", false };
-	m_Preconditions.push_back(pEnemyWasInSight);
-
-	// Make sure the states exist in the world
-	if (!pWorldState->DoesStateExist(pEnemyWasInSight->propertyKey))
-	{
-		// State doesn't exist, add the state with some default starter value
-		pWorldState->AddState(pEnemyWasInSight->propertyKey, pEnemyWasInSight->value.bValue);
-	}
-}
-

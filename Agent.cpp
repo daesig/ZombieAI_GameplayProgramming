@@ -27,6 +27,7 @@ Agent::~Agent()
 	DeleteWorldState();
 }
 
+// Update
 SteeringPlugin_Output Agent::UpdateSteering(float dt)
 {
 	SteeringPlugin_Output steering{};
@@ -35,8 +36,20 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
+	// Manage vitals
+	if (agentInfo.Energy < 5.f)
+		m_pWorldState->SetState("RequiresFood", true);
+	if (agentInfo.Health < 8.f)
+		m_pWorldState->SetState("RequiresHealth", true);
+	if (agentInfo.Position.Distance(GetGoalPosition()) < 4.f)
+	{
+		m_pWorldState->SetState("HasMovementGoal", false);
+	}
+
 	// Reset worldstate
 	m_pWorldState->SetState("EnemyInSight", false);
+
+	// Get most nearby enemy and enemy count
 	float closestDistanceSq{ FLT_MAX };
 	for (auto& enemyInFov : vEntitiesInFOV)
 	{
@@ -62,7 +75,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	// Update FSM states
 	if (m_pDecisionMaking)
 	{
-		//std::cout << "Updatin...\n";
 		m_pDecisionMaking->Update(m_pInterface, m_pGOAPPlanner, dt);
 	}
 
@@ -108,6 +120,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 
 	return steering;
 }
+// Render
 void Agent::Render(IExamInterface* pExamInterface, float dt) const
 {
 	//pExamInterface->Draw_SolidCircle(pExam, .7f, { 0,0 }, { 1, 0, 0 });
@@ -152,6 +165,7 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 	m_pSeekBehavior->SetTarget(seekPos);
 }
 
+// Inventory
 bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError)
 {
 	// Get info
@@ -185,7 +199,7 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 	// No item was grabbed, return false
 	return false;
 }
-bool Agent::ConsumeFood()
+bool Agent::ConsumeItem(const eItemType& itemType)
 {
 	bool success{ false };
 
@@ -196,13 +210,9 @@ bool Agent::ConsumeFood()
 		bool itemFound = m_pInterface->Inventory_GetItem(index, inventoryItem);
 		if (itemFound)
 		{
-			if (inventoryItem.Type == eItemType::FOOD)
+			if (inventoryItem.Type == itemType)
 			{
 				success = m_pInterface->Inventory_UseItem(index);
-				if (success)
-					m_pWorldState->SetState("HasFood", false);
-				else
-					std::cout << "Failed to consume food\n";
 				break;
 			}
 		}
@@ -352,18 +362,19 @@ void Agent::InitializeGOAP()
 	// GOAP planner
 	m_pGOAPPlanner = new GOAPPlanner(m_pWorldState);
 
-	/// GOAP Actions
-	// GOAPMoveTo
-	GOAPAction* pGOAPExploreWorldAction = new GOAPExploreWorldAction(m_pGOAPPlanner);
+	// GOAP Actions
 	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
-	GOAPAction* pGOAPEvadeEnemy = new GOAPEvadeEnemy(m_pGOAPPlanner);
-	GOAPAction* pGOAPDrinkEnergy = new GOAPConsumeFood(m_pGOAPPlanner);
-	GOAPAction* pGOAPSearchForItem = new GOAPSearchForFood(m_pGOAPPlanner);
-	m_pActions.push_back(pGOAPExploreWorldAction);
+	GOAPAction* pGOAPConsumeFood = new GOAPConsumeFood(m_pGOAPPlanner);
+	GOAPAction* pGOAPConsumeMedkit = new GOAPConsumeMedkit(m_pGOAPPlanner);
+	GOAPAction* pGOAPSearchForFood = new GOAPSearchForFood(m_pGOAPPlanner);
+	GOAPAction* pGOAPSearchForMedkit = new GOAPSearchForMedkit(m_pGOAPPlanner);
+	GOAPAction* pSearchItem = new GOAPSearchItem(m_pGOAPPlanner);
 	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
-	m_pActions.push_back(pGOAPEvadeEnemy);
-	m_pActions.push_back(pGOAPDrinkEnergy);
-	m_pActions.push_back(pGOAPSearchForItem);
+	m_pActions.push_back(pGOAPConsumeFood);
+	m_pActions.push_back(pGOAPConsumeMedkit);
+	m_pActions.push_back(pGOAPSearchForFood);
+	m_pActions.push_back(pGOAPSearchForMedkit);
+	m_pActions.push_back(pSearchItem);
 	//...
 
 	// Let the planner know all the action this agent can do

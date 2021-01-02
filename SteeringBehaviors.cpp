@@ -92,7 +92,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		float dodgeRange{ 10.f };
 		if (*enemyCount > 1)
 		{
-			std::cout << "Enemies: " << *enemyCount << "\n";
 			dodgeRange = 40.f;
 		}
 

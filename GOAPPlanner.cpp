@@ -18,12 +18,14 @@ GOAPPlanner::~GOAPPlanner()
 	m_pGoalAction = nullptr;
 }
 
-void GOAPPlanner::PlanAction()
+bool GOAPPlanner::PlanAction()
 {
 	// Reset queue of actions
 	m_pActionQueue.empty();
 
 	m_pActionQueue = m_pSearchAlgorithm->Search(m_pGoalAction, m_pActions);
+
+	return m_pActionQueue.size() > 0;
 }
 
 GOAPAction* GOAPPlanner::GetAction() const

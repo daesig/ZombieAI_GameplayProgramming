@@ -56,3 +56,38 @@ inline bool utils::IsPointInHouse(const Elite::Vector2& point, const HouseInfo& 
 {
 	return true;
 }
+
+bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
+{
+	bool requiresFood{ true };
+	bool requiresHealth{ true };
+	bool hasFood{ false };
+	bool hasMedkit{ false };
+	bool success{ true };
+	success = pWorldState->GetState("RequiresFood", requiresFood) && pWorldState->GetState("RequiresHealth", requiresHealth)
+		&& pWorldState->GetState("HasFood", hasFood) && pWorldState->GetState("HasMedkit", hasMedkit);
+
+	if (!success)
+		std::cout << "Error reading vitals!\n";
+
+	bool needFood{false};
+	bool needHealth{false};
+
+	if (requiresFood)
+	{
+		if (hasFood)
+		{
+			needFood = true;
+		}
+	}
+
+	if (requiresHealth)
+	{
+		if (hasMedkit)
+		{
+			needHealth = true;
+		}
+	}
+
+	return !needFood || !needHealth;
+}

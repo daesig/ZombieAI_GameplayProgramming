@@ -10,7 +10,7 @@ public:
 	GOAPPlanner(WorldState* pWorldState);
 	~GOAPPlanner();
 
-	void PlanAction();
+	bool PlanAction();
 	GOAPAction* GetAction() const;
 	void NextAction();
 
