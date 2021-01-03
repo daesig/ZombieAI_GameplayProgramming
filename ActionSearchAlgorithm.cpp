@@ -180,10 +180,19 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 			// Action was correctly satisfied
 			closedlist.push_back(currentRecord);
 
-			// Sort the actions from cheapest to most expensive
-			std::sort(actionsThatSatisfy.begin(), actionsThatSatisfy.end(), [](const GOAPAction* a, const GOAPAction* b)
+			// Sort the actions, from expensive to cheaper
+			// Satisfied actions get priority over unsatisfied actions and should be put at the end so they get ran first
+			std::sort(actionsThatSatisfy.begin(), actionsThatSatisfy.end(), [this](GOAPAction* a, GOAPAction* b)
 				{
-					return a->GetCost() > b->GetCost();
+					// If true, put a before b in the vector
+					bool isMoreExpensive = a->GetCost() > b->GetCost();
+					auto unsatisfiedPreconditionsA = utils::GetUnsatisfiedActionEffects(a->GetPreconditions(), m_pWorldState);
+					auto unsatisfiedPreconditionsB = utils::GetUnsatisfiedActionEffects(b->GetPreconditions(), m_pWorldState);
+
+					if (unsatisfiedPreconditionsA.size() < unsatisfiedPreconditionsB.size())
+						return false;
+
+					return isMoreExpensive;
 				}
 			);
 
