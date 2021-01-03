@@ -37,11 +37,11 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	// Manage vitals
-	if (agentInfo.Energy < 6.f)
+	if (agentInfo.Energy < m_MimimumRequiredFood)
 		m_pWorldState->SetState("RequiresFood", true);
-	if (agentInfo.Health < 8.f)
+	if (agentInfo.Health < m_MinimumRequiredHealth)
 		m_pWorldState->SetState("RequiresHealth", true);
-	if (agentInfo.Position.Distance(GetGoalPosition()) < 4.f)
+	if (agentInfo.Position.Distance(GetGoalPosition()) < m_DistanceToFullfillMovement)
 	{
 		m_pWorldState->SetState("HasGoal", false);
 	}
@@ -200,7 +200,6 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 		// Non-garbage. Pick up
 		else
 		{
-			//bool priority{ grabbedType == itemPriority };
 			return AddInventoryItem(i, grabError);
 		}
 
@@ -225,6 +224,7 @@ bool Agent::ConsumeItem(const eItemType& itemType)
 			if (inventoryItem.Type == itemType)
 			{
 				success = m_pInterface->Inventory_UseItem(index);
+				m_pInterface->Inventory_RemoveItem(index);
 				break;
 			}
 		}
@@ -236,14 +236,17 @@ bool Agent::ConsumeItem(const eItemType& itemType)
 bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 {
 	int index{ 0 };
-	bool handled{ false };
 	bool success{ false };
 
 	ItemInfo lootedItemInfo;
 	m_pInterface->Item_GetInfo(entity, lootedItemInfo);
 	eItemType lootedItemType{ lootedItemInfo.Type };
 
-	while (!handled && index < m_MaxInventorySlots)
+	std::vector<int> medkitsFoundIndices{  };
+	std::vector<int> foodFoundIndices{  };
+	bool requiredItem = lootedItemType == eItemType::FOOD || lootedItemType == eItemType::MEDKIT;
+
+	while (index < m_MaxInventorySlots)
 	{
 		ItemInfo itemInCurrentSlot{};
 		bool itemFound = m_pInterface->Inventory_GetItem(index, itemInCurrentSlot);
@@ -257,11 +260,23 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 			// Add the grabbed item to the inventory
 			success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 			// Process the world states
-			ProcessItemWorldState(lootedItemInfo.Type);
+			if (success)
+				ProcessItemWorldState(lootedItemInfo.Type);
 			break;
 		}
 		else
 		{
+			// Process item counts
+			switch (itemInCurrentSlot.Type)
+			{
+			case eItemType::MEDKIT:
+				medkitsFoundIndices.push_back(index);
+				break;
+			case eItemType::FOOD:
+				foodFoundIndices.push_back(index);
+				break;
+			}
+
 			if (itemInCurrentSlot.Type == lootedItemType)
 			{
 				std::cout << "Item already exists in inventory\n";
@@ -275,19 +290,74 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 					// Add the grabbed item to the inventory
 					success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 					// Process the world states
-					ProcessItemWorldState(lootedItemInfo.Type);
-					break;
-				}
-				else
-				{
-					// Try to destroy the item
-					success = m_pInterface->Item_Destroy(entity);
+					if (success)
+						ProcessItemWorldState(lootedItemInfo.Type);
 					break;
 				}
 			}
 		}
 
 		++index;
+	}
+
+	// The inventory did not have space for the item
+	if (!success)
+	{
+		// Attempt to replace another random item if this item is required
+		if (requiredItem)
+		{
+			// The item is only required if no other instances of it were found in the inventory
+			switch (lootedItemType)
+			{
+			case eItemType::MEDKIT:
+				requiredItem = medkitsFoundIndices.size() == 0;
+				break;
+			case eItemType::FOOD:
+				requiredItem = foodFoundIndices.size() == 0;
+				break;
+			}
+		}
+
+		// Final check, the item is now required, replace a random other item
+		if (requiredItem)
+		{
+			// Improvements: Possible to not replace the best food / best medkit if we keep count of how many there are in which index
+			bool randomIsValid{ false };
+			int random;
+			while (!randomIsValid)
+			{
+				randomIsValid = true;
+				random = Elite::randomInt(m_MaxInventorySlots);
+
+				if (foodFoundIndices.size() > 0)
+				{
+					if (random == foodFoundIndices[0])
+						randomIsValid = false;
+				}
+
+				if (medkitsFoundIndices.size() > 0)
+				{
+					if (random == medkitsFoundIndices[0])
+						randomIsValid = false;
+				}
+			}
+
+			// Random was chosen, replace the item in question
+			// Clear the current inventory slot
+			m_pInterface->Inventory_RemoveItem(random);
+			// Grab the item from the ground
+			grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			// Add the grabbed item to the inventory
+			success = grabError && m_pInterface->Inventory_AddItem(random, lootedItemInfo);
+			// Process the world states
+			if (success)
+				ProcessItemWorldState(lootedItemInfo.Type);
+		}
+		else
+		{
+			// No place for item, destroy it
+			success = m_pInterface->Item_Destroy(entity);
+		}
 	}
 
 	return success;

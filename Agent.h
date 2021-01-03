@@ -73,6 +73,12 @@ private:
 	Elite::Vector2 m_LastSeenClosestEnemy{};
 	float m_EnemyCount{ 0 };
 
+	// Vitals
+	float m_MinimumRequiredHealth{ 9.5f };
+	float m_MimimumRequiredFood{ 6.f };
+	// Other worldstates
+	float m_DistanceToFullfillMovement{ 4.f };
+
 	// Debugging
 	bool m_DebugSeek = false;
 	float m_DebugTimer{ 2.f };

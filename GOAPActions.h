@@ -81,6 +81,9 @@ public:
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
+	virtual void ApplyEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
+
+	bool m_Consumed = false;
 };
 
 class GOAPConsumeMedkit final : public GOAPAction
@@ -93,6 +96,9 @@ public:
 private:
 	virtual void InitPreConditions(GOAPPlanner* pPlanner);
 	virtual void InitEffects(GOAPPlanner* pPlanner);
+	virtual void ApplyEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const;
+
+	bool m_Consumed = false;
 };
 
 class GOAPSearchItem : public GOAPAction
@@ -111,7 +117,7 @@ protected:
 	Agent* m_pAgent = nullptr;
 private:
 	Elite::Vector2 m_selectedLocation{};
-	float m_ArrivalRange = 2.f;
+	float m_ArrivalRange = 3.5f;
 	float m_HouseExploreCooldown = 300.f;
 	Elite::Vector2 m_HouseGoalPos{};
 

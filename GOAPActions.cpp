@@ -9,7 +9,7 @@
 
 // ---------------------------
 // Base class GOAPAction
-GOAPAction::GOAPAction(GOAPPlanner* pPlanner, const std::string& effectName):
+GOAPAction::GOAPAction(GOAPPlanner* pPlanner, const std::string& effectName) :
 	m_EffectName{ effectName }
 {
 	m_pWorldState = pPlanner->GetWorldState();
@@ -77,9 +77,9 @@ void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 	// Food management
 	GOAPProperty* pE1 = new GOAPProperty{ "RequiresFood", false };
 	utils::AddActionProperty(pE1, m_Preconditions, m_pWorldState, false);
-	GOAPProperty* pE2= new GOAPProperty{ "HasFood", true};
+	GOAPProperty* pE2 = new GOAPProperty{ "HasFood", true };
 	utils::AddActionProperty(pE2, m_Preconditions, m_pWorldState, false);
-	
+
 	// Health management
 	GOAPProperty* pH1 = new GOAPProperty{ "RequiresHealth", false };
 	utils::AddActionProperty(pH1, m_Preconditions, m_pWorldState, false);
@@ -111,6 +111,7 @@ GOAPConsumeFood::GOAPConsumeFood(GOAPPlanner* pPlanner) :
 void GOAPConsumeFood::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Setting up GOAPDrinkEnergy\n";
+	m_Consumed = false;
 }
 bool GOAPConsumeFood::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
@@ -119,8 +120,16 @@ bool GOAPConsumeFood::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner,
 	if (!dataValid)
 		return false;
 
-	bool consumedFood = pAgent->ConsumeItem(eItemType::FOOD);
-	return consumedFood;
+	// Check if the consumption went fine if we did decide to consume
+	bool success = true;
+	// Make sure we can only consume once
+	if (!m_Consumed)
+	{
+		m_Consumed = pAgent->ConsumeItem(eItemType::FOOD);
+		success = m_Consumed;
+	}
+
+	return success;
 }
 bool GOAPConsumeFood::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
@@ -140,6 +149,41 @@ void GOAPConsumeFood::InitEffects(GOAPPlanner* pPlanner)
 	GOAPProperty* pHasFoodCondition = new GOAPProperty{ "HasFood", false };
 	utils::AddActionProperty(pHasFoodCondition, m_Effects, m_pWorldState, false);
 }
+void GOAPConsumeFood::ApplyEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
+{
+	// Setup behavior to an item search behavior with priority for energy
+	int maxInventorySlots = pInterface->Inventory_GetCapacity();
+	int index{ 0 };
+	bool allFoodUsed = true;
+	while (index < maxInventorySlots)
+	{
+		ItemInfo item;
+		bool hasItem = pInterface->Inventory_GetItem(index, item);
+		if (hasItem)
+		{
+			if (item.Type == eItemType::FOOD)
+			{
+				allFoodUsed = false;
+				break;
+			}
+		}
+		++index;
+	}
+
+
+	for (auto& effect : m_Effects)
+	{
+		// Make sure we only apply this effect when neccessary
+		if (effect->propertyKey == "HasFood")
+		{
+			// Apply the effect if there is no medkit in inventory
+			if (allFoodUsed)
+				m_pWorldState->SetState(effect->propertyKey, effect->value.bValue);
+		}
+		else
+			m_pWorldState->SetState(effect->propertyKey, effect->value.bValue);
+	}
+}
 
 // GOAPConsumeMedkit: public GOAPAction
 // Preconditions: HasMedkit(true);
@@ -154,6 +198,7 @@ GOAPConsumeMedkit::GOAPConsumeMedkit(GOAPPlanner* pPlanner) :
 void GOAPConsumeMedkit::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	std::cout << "Setting up GOAPConsumeMedkit\n";
+	m_Consumed = false;
 }
 bool GOAPConsumeMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
 {
@@ -162,8 +207,16 @@ bool GOAPConsumeMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanne
 	if (!dataValid)
 		return false;
 
-	bool consumedMedkit = pAgent->ConsumeItem(eItemType::MEDKIT);
-	return consumedMedkit;
+	// Check if the consumption went fine if we did decide to consume
+	bool success = true;
+	// Make sure we can only consume once
+	if (!m_Consumed)
+	{
+		m_Consumed = pAgent->ConsumeItem(eItemType::MEDKIT);
+		success = m_Consumed;
+	}
+
+	return success;
 }
 bool GOAPConsumeMedkit::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
 {
@@ -182,6 +235,40 @@ void GOAPConsumeMedkit::InitEffects(GOAPPlanner* pPlanner)
 
 	GOAPProperty* pHasFoodCondition = new GOAPProperty{ "HasMedkit", false };
 	utils::AddActionProperty(pHasFoodCondition, m_Effects, m_pWorldState, false);
+}
+void GOAPConsumeMedkit::ApplyEffects(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
+{
+	// Setup behavior to an item search behavior with priority for energy
+	int maxInventorySlots = pInterface->Inventory_GetCapacity();
+	int index{ 0 };
+	bool allMedkitsUsed = true;
+	while (index < maxInventorySlots)
+	{
+		ItemInfo item;
+		bool hasItem = pInterface->Inventory_GetItem(index, item);
+		if (hasItem)
+		{
+			if (item.Type == eItemType::MEDKIT)
+			{
+				allMedkitsUsed = false;
+				break;
+			}
+		}
+		++index;
+	}
+
+	for (auto& effect : m_Effects)
+	{
+		// Make sure we only apply this effect when neccessary
+		if (effect->propertyKey == "HasMedkit")
+		{
+			// Apply the effect if there is no medkit in inventory
+			if (allMedkitsUsed)
+				m_pWorldState->SetState(effect->propertyKey, effect->value.bValue);
+		}
+		else
+			m_pWorldState->SetState(effect->propertyKey, effect->value.bValue);
+	}
 }
 
 // GOAPSearchItem: public GOAPAction
@@ -343,7 +430,7 @@ void GOAPSearchItem::InitPreConditions(GOAPPlanner* pPlanner)
 	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
 	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
 }
-void GOAPSearchItem::InitEffects(GOAPPlanner * pPlanner)
+void GOAPSearchItem::InitEffects(GOAPPlanner* pPlanner)
 {
 	GOAPProperty* pM1 = new GOAPProperty{ "HasGoal", true };
 	utils::AddActionProperty(pM1, m_Effects, m_pWorldState, false);
@@ -373,7 +460,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 
 			if (pClosestItem)
 			{
-				m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
 				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
 			}
 			else
@@ -408,7 +494,6 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			if (pClosestHouse)
 			{
 				m_HouseGoalPos = pClosestHouse->houseInfo.Center;
-				m_pAgent->SetDistantGoalPosition(m_HouseGoalPos);
 				destination = pInterface->NavMesh_GetClosestPathPoint(m_HouseGoalPos);
 			}
 			else
@@ -420,12 +505,14 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 	{
 		if (closestItemDistanceFromAgentSquared < closestHouseDistanceFromAgentSquared)
 		{
-			destination = pClosestItem->Location;
+			m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
+			destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
 		}
 		foundPath = true;
 	}
 	else if (pClosestHouse)
 	{
+		m_pAgent->SetDistantGoalPosition(pClosestHouse->houseInfo.Center);
 		foundPath = true;
 	}
 
@@ -564,8 +651,7 @@ bool GOAPSearchForFood::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner
 	return true;
 }
 void GOAPSearchForFood::InitPreConditions(GOAPPlanner* pPlanner)
-{
-}
+{}
 void GOAPSearchForFood::InitEffects(GOAPPlanner* pPlanner)
 {
 	GOAPProperty* pCondition = new GOAPProperty{ "HasFood", true };
@@ -575,7 +661,7 @@ void GOAPSearchForFood::InitEffects(GOAPPlanner* pPlanner)
 // GOAPSearchForMedkit: public GOAPSearchItem
 // Preconditions: InitialHouseScoutDone(true) 
 // Effects: HasMedkit(true)
-GOAPSearchForMedkit::GOAPSearchForMedkit(GOAPPlanner* pPlanner):
+GOAPSearchForMedkit::GOAPSearchForMedkit(GOAPPlanner* pPlanner) :
 	GOAPSearchItem(pPlanner, "GOAPSearchForMedkit")
 {
 	InitPreConditions(pPlanner);
@@ -608,8 +694,7 @@ bool GOAPSearchForMedkit::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlann
 	return true;
 }
 void GOAPSearchForMedkit::InitPreConditions(GOAPPlanner* pPlanner)
-{
-}
+{}
 void GOAPSearchForMedkit::InitEffects(GOAPPlanner* pPlanner)
 {
 	GOAPProperty* pCondition = new GOAPProperty{ "HasMedkit", true };

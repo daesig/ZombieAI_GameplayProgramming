@@ -46,7 +46,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
 		std::cout << "Asking new route towards goal...\n";
-		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetGoalPosition()));
+		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
 		m_NavMeshRefreshTimer = 0.f;
 	}
 	m_NavMeshRefreshTimer += deltaT;
@@ -109,7 +109,8 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 		if (abs(angleToEnemy) < 20.f)
 		{
-			//angleToEnemy += 5.f * (angleToEnemy / abs(angleToEnemy));
+			float sign = angleToEnemy / abs(angleToEnemy);
+			angleToEnemy += 15.f * sign;
 		}
 
 		// Convert angle back to radians

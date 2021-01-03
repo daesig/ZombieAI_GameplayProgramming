@@ -189,9 +189,13 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 					auto unsatisfiedPreconditionsA = utils::GetUnsatisfiedActionEffects(a->GetPreconditions(), m_pWorldState);
 					auto unsatisfiedPreconditionsB = utils::GetUnsatisfiedActionEffects(b->GetPreconditions(), m_pWorldState);
 
-					if (unsatisfiedPreconditionsA.size() < unsatisfiedPreconditionsB.size())
+					// Put A earlier in the list if it requires more conditions to be satisfied
+					if (unsatisfiedPreconditionsA.size() > unsatisfiedPreconditionsB.size())
+						return true;
+					else if (unsatisfiedPreconditionsA.size() < unsatisfiedPreconditionsB.size())
 						return false;
 
+					// Both have the same unsatisfied amount, but the most expensive ones first
 					return isMoreExpensive;
 				}
 			);
