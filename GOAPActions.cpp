@@ -301,7 +301,9 @@ void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 	}
 
 	ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
-	m_pAgent->SetBehavior(BehaviorType::SEEKDODGE);
+
+
+	//m_pAgent->SetBehavior(BehaviorType::SEEKDODGE);
 
 	// Testing
 	m_IsDoneTimer = 0.f;
@@ -354,6 +356,7 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	bool requiresNewSeekPos{ false };
 
 	// Check for items
+	bool hasEnemies{ false };
 	for (EntityInfo& entity : vEntitiesInFov)
 	{
 		if (entity.Type == eEntityType::ITEM)
@@ -378,6 +381,25 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 				}
 			}
 		}
+		else
+		{
+			hasEnemies = true;
+		}
+	}
+
+	const AgentInfo& agentInfo = pInterface->Agent_GetInfo();
+	ExploredHouse* pHouse = IsAgentInHouse(agentInfo.Position);
+
+	// Go into kill behavior if we're not in a house and we have a weapon
+	if (m_pWorldState->IsStateMet("HasWeapon", true) && !pHouse) 
+	{
+		//std::cout << "Setting behavior to Kill\n";
+		m_pAgent->SetBehavior(BehaviorType::KILL);
+	}
+	else
+	{
+		//std::cout << "Setting behavior to Seek dodge\n";
+		m_pAgent->SetBehavior(BehaviorType::SEEKDODGE);
 	}
 
 	// Check for new houses
@@ -558,20 +580,9 @@ bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlan
 	if (agentPos.DistanceSquared(m_HouseGoalPos) < m_ArrivalRange * m_ArrivalRange)
 	{
 		// Is he in a house?
-		for (ExploredHouse& h : *m_pHouseLocations)
-		{
-			float housePadding{ 1.f };
-			float marginX{ h.houseInfo.Size.x / housePadding };
-			float marginY{ h.houseInfo.Size.y / housePadding };
-			float halfWidth = h.houseInfo.Size.x / 2.f;
-			float halfHeight = h.houseInfo.Size.y / 2.f;
-			// Check if agent location is in the house
-			if ((agentPos.x + housePadding < h.houseInfo.Center.x + halfWidth) && (agentPos.x - housePadding > h.houseInfo.Center.x - halfWidth) &&
-				(agentPos.y + housePadding < h.houseInfo.Center.y + halfHeight) && (agentPos.y - housePadding > h.houseInfo.Center.y - halfHeight))
-			{
-				h.timeSinceExplored = 0.f;
-			}
-		}
+		ExploredHouse* pHouse = IsAgentInHouse(agentPos);
+		if (pHouse)
+			pHouse->timeSinceExplored = 0.f;
 	}
 
 	// Has the agent arrived at it's location
@@ -610,6 +621,26 @@ void GOAPSearchItem::RemoveExploredCornerLocations(HouseInfo& houseInfo)
 
 	if (findIt != m_pHouseCornerLocations->end())
 		m_pHouseCornerLocations->erase(findIt, m_pHouseCornerLocations->end());
+}
+
+ExploredHouse* GOAPSearchItem::IsAgentInHouse(const Elite::Vector2& agentPos)
+{
+	for (ExploredHouse& h : *m_pHouseLocations)
+	{
+		float housePadding{ 1.f };
+		float marginX{ h.houseInfo.Size.x / housePadding };
+		float marginY{ h.houseInfo.Size.y / housePadding };
+		float halfWidth = h.houseInfo.Size.x / 2.f;
+		float halfHeight = h.houseInfo.Size.y / 2.f;
+		// Check if agent location is in the house
+		if ((agentPos.x + housePadding < h.houseInfo.Center.x + halfWidth) && (agentPos.x - housePadding > h.houseInfo.Center.x - halfWidth) &&
+			(agentPos.y + housePadding < h.houseInfo.Center.y + halfHeight) && (agentPos.y - housePadding > h.houseInfo.Center.y - halfHeight))
+		{
+			return &h;
+		}
+	}
+
+	return nullptr;
 }
 
 // SearchForFood: public GOAPSearchItem

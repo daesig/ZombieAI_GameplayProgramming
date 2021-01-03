@@ -31,11 +31,14 @@ public:
 
 	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError);
 	bool ConsumeItem(const eItemType& itemType);
+	bool Shoot();
 
 	const Elite::Vector2& GetGoalPosition() const { return m_GoalPosition; };
 	const Elite::Vector2& GetDistantGoalPosition() const { return m_DistantGoalPosition; };
 	void SetGoalPosition(const Elite::Vector2& goalPosition) { m_GoalPosition = goalPosition; };
 	void SetDistantGoalPosition(const Elite::Vector2& goalPosition) { m_DistantGoalPosition = goalPosition; };
+
+	bool WasBitten() const;
 private:
 	IExamInterface* m_pInterface = nullptr;
 	// Decision making 
@@ -53,7 +56,7 @@ private:
 	Wander* m_pWanderBehavior = nullptr;
 	Seek* m_pSeekBehavior = nullptr;
 	SeekAndDodge* m_pSeekDodgeBehavior = nullptr;
-	SeekItem* m_pSeekItemBehavior = nullptr;
+	KillBehavior* m_pKillBehavior = nullptr;
 
 	// Data
 	Blackboard* m_pBlackboard = nullptr;
@@ -76,6 +79,9 @@ private:
 	// Vitals
 	float m_MinimumRequiredHealth{ 9.5f };
 	float m_MimimumRequiredFood{ 6.f };
+	bool m_WasBitten{ false };
+	float m_BittenTimer{ 0.f };
+	float m_BittenTime{ 2.f };
 	// Other worldstates
 	float m_DistanceToFullfillMovement{ 4.f };
 

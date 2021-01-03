@@ -44,6 +44,7 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 	//params.LevelFile = "LevelOne.gppl";
 	//params.LevelFile = "LevelTwo.gppl";
 	//params.LevelFile = "LevelThree.gppl";
+	params.SpawnDebugPistol = false;
 }
 
 //Only Active in DEBUG Mode

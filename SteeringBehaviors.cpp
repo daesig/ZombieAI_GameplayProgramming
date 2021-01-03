@@ -5,9 +5,10 @@
 #include "Blackboard.h"
 #include "Agent.h"
 #include "IExamInterface.h"
+#include "utils.h"
 
 //SEEK (base>ISteeringBehavior)
-SteeringPlugin_Output Seek::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
+SteeringPlugin_Output Seek::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal)
 {
 	SteeringPlugin_Output steering{};
 
@@ -26,8 +27,12 @@ Elite::Vector2 Seek::GetTarget() const
 	return m_Target;
 }
 
+SeekAndDodge::SeekAndDodge() :
+	ISteeringBehavior()
+{}
+
 // Dodge the enemy, keeping in mind the goal location
-SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
+SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal)
 {
 	SteeringPlugin_Output steering{};
 
@@ -42,14 +47,17 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		&& pBlackboard->GetData("WorldState", pWorldState);
 	if (!dataValid) return steering;
 
-	// Recalculate goal pos due to all the navmesh bugs
-	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
+	if (changeGoal)
 	{
-		std::cout << "Asking new route towards goal...\n";
-		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
-		m_NavMeshRefreshTimer = 0.f;
+		// Recalculate goal pos due to all the navmesh bugs
+		if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
+		{
+			std::cout << "Asking new route towards goal...\n";
+			pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
+			m_NavMeshRefreshTimer = 0.f;
+		}
+		m_NavMeshRefreshTimer += deltaT;
 	}
-	m_NavMeshRefreshTimer += deltaT;
 
 	bool enemyInSight = false;
 	if (!pWorldState->GetState("EnemyInSight", enemyInSight))
@@ -64,27 +72,9 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	float distance = normal.Normalize();
 
 	// Map orientation to a normal angle...
-	float orientationAngle = agentInfo.Orientation * 180.f / float(M_PI);
-	// If positive
-	if (orientationAngle >= 0.f)
-		orientationAngle -= 90.f;
-	else
-	{
-		// If [-180, -90]
-		if (orientationAngle <= -90.f)
-		{
-			orientationAngle = abs(orientationAngle);
-			float temp = abs(orientationAngle - 180.f);
-			orientationAngle = 90.f + temp;
-		}
-		// If ]-90, 0[
-		else
-		{
-			orientationAngle = abs(orientationAngle);
-			float temp = abs(orientationAngle - 90.f);
-			orientationAngle = temp - 180.f;
-		}
-	}
+	float orientationAngle = utils::GetCorrectedOrientationAngleInDeg(agentInfo.Orientation);
+	orientationAngle = fmod(orientationAngle, 360.f);
+	//orientationAngle = orientationAngle * float(M_PI) / 180.f;
 
 	if (enemyInSight)
 	{
@@ -99,29 +89,35 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		// Get the angle towards the enemy
 		float angleToEnemy = atan2(lastSeenEnemyPos->y - agentInfo.Position.y, lastSeenEnemyPos->x - agentInfo.Position.x);
 		float angleToEnemyDeg = angleToEnemy * 180.f / float(M_PI);
-		// If the enemy is in right front of us
-		angleToEnemy = angleToEnemyDeg - orientationAngle;
+		angleToEnemyDeg = angleToEnemyDeg - orientationAngle;
 		// Map angle to enemy to a values between -180 and 180
 		if (angleToEnemyDeg > 180.f)
 			angleToEnemyDeg -= 360.f;
 		if (angleToEnemyDeg < -180.f)
 			angleToEnemyDeg += 360.f;
 
-		if (abs(angleToEnemy) < 20.f)
+		m_AngleToLastEnemy = angleToEnemyDeg;
+		m_LastOrientationAngle = orientationAngle;
+
+		// If the enemy is in right front of us
+		if (abs(angleToEnemyDeg) < 20.f)
 		{
-			float sign = angleToEnemy / abs(angleToEnemy);
-			angleToEnemy += 15.f * sign;
+			float sign = angleToEnemyDeg / abs(angleToEnemyDeg);
+			angleToEnemyDeg += 15.f * sign;
 		}
 
 		// Convert angle back to radians
-		angleToEnemy = angleToEnemy * float(M_PI) / 180.f;
+		angleToEnemy = angleToEnemyDeg * float(M_PI) / 180.f;
 		orientationAngle = orientationAngle * float(M_PI) / 180.f;
 
-		// Set a new goal position that dodges the enemy
-		float halfPi = float(M_PI) / 2.f;
-		Elite::Vector2 newGoal = agentInfo.Position + Elite::Vector2{ cos(orientationAngle + -angleToEnemy) * dodgeRange, sin(orientationAngle + -angleToEnemy) * dodgeRange };
-		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(newGoal));
-		steering.RunMode = true;
+		if (changeGoal)
+		{
+			// Set a new goal position that dodges the enemy
+			float halfPi = float(M_PI) / 2.f;
+			Elite::Vector2 newGoal = agentInfo.Position + Elite::Vector2{ cos(orientationAngle + -angleToEnemy) * dodgeRange, sin(orientationAngle + -angleToEnemy) * dodgeRange };
+			pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(newGoal));
+			steering.RunMode = true;
+		}
 	}
 	else
 		steering.RunMode = false;
@@ -130,6 +126,12 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	steering.LinearVelocity = pAgent->GetGoalPosition() - agentInfo.Position;
 	steering.LinearVelocity.Normalize();
 	steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
+
+	if (pAgent->WasBitten())
+	{
+		std::cout << "BITTEN\n";
+		steering.RunMode = true;
+	}
 
 	// Slow down when we get close to the goal
 	if (distance < 3.f)
@@ -141,7 +143,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		float angleFromAgentToGoal = angleToGoal - orientationAngle;
 		if (angleFromAgentToGoal > float(M_PI) / 4.f)
 		{
-			//std::cout << "SLOW DOWN! Angle: " << angleFromAgentToGoal << " \n";
 			steering.LinearVelocity.Normalize();
 			steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
 			steering.AngularVelocity = agentInfo.MaxAngularSpeed * (angleFromAgentToGoal / abs(angleFromAgentToGoal));
@@ -160,13 +161,80 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	return steering;
 }
 
+KillBehavior::KillBehavior() :
+	SeekAndDodge()
+{}
+SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal)
+{
+	SteeringPlugin_Output steering = SeekAndDodge::CalculateSteering(pInterface, deltaT, agentInfo, pBlackboard, false);
+	steering.AutoOrient = false;
+
+	//Elite::Vector2 closestEnemyPos{};
+	//bool isValid = pBlackboard->GetData("LastEnemyPos", closestEnemyPos);
+	//if (!isValid)
+	//	return steering;
+
+	steering.AngularVelocity = agentInfo.MaxAngularSpeed;
+
+	float goalAngle{ 1.f };
+	//float goalAngleRad = goalAngle * float(M_PI) / 180.f;
+
+	WorldState* pWorldState = nullptr;
+	if (pBlackboard->GetData("WorldState", pWorldState))
+	{
+		Elite::Vector2* lastSeenEnemyPos{};
+		pBlackboard->GetData("LastEnemyPos", lastSeenEnemyPos);
+		pInterface->Draw_Circle(*lastSeenEnemyPos, 1.5f, { 1.f,1.f,1.f });
+
+		steering.AngularVelocity = agentInfo.MaxAngularSpeed;
+		if (pWorldState->IsStateMet("EnemyInSight", true))
+		{
+			std::cout << "angle: " << m_AngleToLastEnemy << "\n";
+
+			if (m_AngleToLastEnemy > goalAngle)
+			{
+				steering.AngularVelocity = agentInfo.MaxAngularSpeed;
+			}
+			else if (m_AngleToLastEnemy < -goalAngle)
+			{
+				steering.AngularVelocity = -agentInfo.MaxAngularSpeed;
+			}
+			else
+			{
+				std::cout << "SHOOT\n";
+				// Stop turning
+				steering.AngularVelocity = 0.f;
+
+				Agent* pAgent = nullptr;
+				bool isValid = pBlackboard->GetData("Agent", pAgent);
+				if (pAgent)
+				{
+					std::cout << "SHOOT GUN\n";
+					pAgent->Shoot();
+				}
+			}
+		}
+	}
+
+	//auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface);
+	//for (EntityInfo& entityInfo : vEntitiesInFOV)
+	//{
+	//	if (entityInfo.Type == eEntityType::ENEMY)
+	//	{
+	//		if(entityInfo.Location)
+	//	}
+	//}
+
+	return steering;
+}
+
 //WANDER (base>ISteeringBehavior)
 Wander::Wander() :
 	m_DistanceFromActor{ 5.f },
 	m_WanderRadius{ 5.f },
 	m_RenewDistance{ 2.f }
 {}
-SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
+SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal)
 {
 	SteeringPlugin_Output steering{};
 
@@ -207,34 +275,4 @@ SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, floa
 	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed=
 
 	return steering;
-}
-
-SeekItem::SeekItem() :
-	SeekAndDodge()
-{}
-SteeringPlugin_Output SeekItem::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard)
-{
-	SteeringPlugin_Output steering{};
-
-	// Data 
-	Agent* pAgent = nullptr;
-	WorldState* pWorldState = nullptr;
-	Elite::Vector2* lastSeenEnemyPos{};
-
-	// Check if agent data is valid
-	bool dataValid = pBlackboard->GetData("Agent", pAgent)
-		&& pBlackboard->GetData("WorldState", pWorldState);
-	if (!dataValid) return steering;
-
-	// Determine position to go to
-	// Safely seek towards the desired position
-	steering = SeekAndDodge::CalculateSteering(pInterface, deltaT, agentInfo, pBlackboard);
-	// Check if we can pick up the item
-		// Tell the action...
-
-	return steering;
-}
-void SeekItem::SetItemToSeek(const eItemType& itemType)
-{
-	m_ItemTypeToSeek = itemType;
 }

@@ -14,4 +14,6 @@ namespace utils {
 	inline bool IsPointInHouse(const Elite::Vector2& point, const HouseInfo& house, float margin);
 
 	bool VitalStatisticsAreOk(WorldState* pWorldState);
+
+	float GetCorrectedOrientationAngleInDeg(float orientationAngleRad);
 }

@@ -106,3 +106,30 @@ bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 
 	return true;
 }
+
+float utils::GetCorrectedOrientationAngleInDeg(float orientationAngleRad)
+{
+	float orientationAngle = orientationAngleRad * 180.f / float(M_PI);
+	// If positive
+	if (orientationAngle >= 0.f)
+		orientationAngle -= 90.f;
+	else
+	{
+		// If [-180, -90]
+		if (orientationAngle <= -90.f)
+		{
+			orientationAngle = abs(orientationAngle);
+			float temp = abs(orientationAngle - 180.f);
+			orientationAngle = 90.f + temp;
+		}
+		// If ]-90, 0[
+		else
+		{
+			orientationAngle = abs(orientationAngle);
+			float temp = abs(orientationAngle - 90.f);
+			orientationAngle = temp - 180.f;
+		}
+	}
+
+	return orientationAngle;
+}

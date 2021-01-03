@@ -22,7 +22,7 @@ public:
 	ISteeringBehavior() = default;
 	virtual ~ISteeringBehavior() = default;
 
-	virtual SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) = 0;
+	virtual SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal = true) = 0;
 
 	//Seek Functions
 	virtual void SetTarget(const Elite::Vector2& target) { m_Target = target; }
@@ -45,7 +45,7 @@ public:
 	virtual ~Seek() = default;
 
 	//Seek Behaviour
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal = true) override;
 	virtual void SetTarget(const Elite::Vector2& target) override;
 	Elite::Vector2 GetTarget() const;
 };
@@ -53,28 +53,32 @@ public:
 class SeekAndDodge : public ISteeringBehavior
 {
 public:
-	SeekAndDodge() = default;
+	SeekAndDodge();
 	virtual ~SeekAndDodge() = default;
 
 	//Wander Behavior
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal = true) override;
+protected:
+	float m_AngleToLastEnemy{};
+	float m_LastOrientationAngle{};
 private:
 	float m_DodgeAngle = 35.f; // Angle in degrees
-	float m_NavMeshRefreshTime{ .2f };
-	float m_NavMeshRefreshTimer{ .2f };
+	float m_NavMeshRefreshTime{ 1.f };
+	float m_NavMeshRefreshTimer{ 1.f };
 };
 
-class SeekItem : public SeekAndDodge
+class KillBehavior : public SeekAndDodge
 {
 public:
-	SeekItem();
-	virtual ~SeekItem() = default;
+	KillBehavior();
+	virtual ~KillBehavior() = default;
 
 	//Wander Behavior
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
-	void SetItemToSeek(const eItemType& itemType);
+	SteeringPlugin_Output CalculateSteering(IExamInterface * pInterface, float deltaT, AgentInfo & agentInfo, Blackboard * pBlackboard, bool changeGoal = false) override;
 private:
-	eItemType m_ItemTypeToSeek = eItemType::_LAST;
+	float m_DodgeAngle = 35.f; // Angle in degrees
+	float m_NavMeshRefreshTime{ 1.f };
+	float m_NavMeshRefreshTimer{ 1.f };
 };
 
 //WANDER
@@ -83,7 +87,7 @@ class Wander : public ISteeringBehavior
 public:
 	Wander();
 	virtual ~Wander() = default;
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard) override;
+	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal = true) override;
 private:
 	float m_DistanceFromActor;
 	float m_WanderRadius;

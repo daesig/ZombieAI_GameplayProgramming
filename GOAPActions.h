@@ -130,6 +130,7 @@ private:
 	void ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	bool CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	void RemoveExploredCornerLocations(HouseInfo& houseInfo);
+	ExploredHouse* IsAgentInHouse(const Elite::Vector2& agentPos);
 };
 
 class GOAPSearchForFood final : public GOAPSearchItem

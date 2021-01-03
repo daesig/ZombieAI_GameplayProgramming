@@ -36,6 +36,18 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
+	// Manage bitten status
+	if (agentInfo.WasBitten)
+	{
+		m_BittenTimer = 0.f;
+		m_WasBitten = true;
+	}
+	m_BittenTimer += dt;
+	if (m_BittenTimer > m_BittenTime)
+	{
+		m_WasBitten = false;
+	}
+
 	// Manage vitals
 	if (agentInfo.Energy < m_MimimumRequiredFood)
 		m_pWorldState->SetState("RequiresFood", true);
@@ -76,6 +88,15 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 			}
 		}
 	}
+
+	// Debug override
+	//if (m_pWorldState->IsStateMet("HasWeapon", true))
+	//{
+	//	m_LastSeenClosestEnemy = { 0.1f,0.1f };
+	//	m_pWorldState->SetState("EnemyInSight", true);
+	//	m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
+	//}
+
 	m_EnemyCount = vEntitiesInFOV.size();
 
 	// Update explored houses time
@@ -167,6 +188,9 @@ void Agent::SetBehavior(BehaviorType behaviorType)
 	case BehaviorType::SEEKDODGE:
 		m_pSteeringBehavior = m_pSeekDodgeBehavior;
 		break;
+	case BehaviorType::KILL:
+		m_pSteeringBehavior = m_pKillBehavior;
+		break;
 	default:
 		m_pSteeringBehavior = nullptr;
 		break;
@@ -180,6 +204,7 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 // Inventory
 bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError)
 {
+
 	// Get info
 	ItemInfo itemInfo;
 	pInterface->Item_GetInfo(i, itemInfo);
@@ -232,6 +257,51 @@ bool Agent::ConsumeItem(const eItemType& itemType)
 	}
 
 	return success;
+}
+bool Agent::Shoot()
+{
+	int index{ 0 };
+	int gunsFound{ 0 };
+	bool shotGun{ false };
+	while (index < m_MaxInventorySlots)
+	{
+		ItemInfo itemInfo;
+		m_pInterface->Inventory_GetItem(index, itemInfo);
+
+		// Item is a gun
+		if (itemInfo.Type == eItemType::PISTOL)
+		{
+			++gunsFound;
+			// Shoot if we haven't shot before
+			if (!shotGun)
+			{
+				// Make sure we can only shoot once
+				shotGun = true;
+				// Shoot
+				m_pInterface->Inventory_UseItem(index);
+				// Remove then gun from inventory if it has no ammo left
+				if (m_pInterface->Weapon_GetAmmo(itemInfo) < 1)
+				{
+					m_pInterface->Inventory_RemoveItem(index);
+					// We have one less gun
+					--gunsFound;
+				}
+			}
+		}
+		++index;
+	}
+
+	// All guns have been used
+	if (gunsFound < 1)
+	{
+		m_pWorldState->SetState("HasWeapon", false);
+	}
+
+	return shotGun;
+}
+bool Agent::WasBitten() const
+{
+	return m_WasBitten;
 }
 bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 {
@@ -437,7 +507,7 @@ void Agent::InitializeBehaviors()
 	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
 	m_pSeekDodgeBehavior = new SeekAndDodge();
-	m_pSeekItemBehavior = new SeekItem();
+	m_pKillBehavior = new KillBehavior();
 }
 void Agent::InitializeGOAP()
 {
@@ -532,8 +602,8 @@ void Agent::DeleteBehaviors()
 	m_pSeekBehavior = nullptr;
 	delete m_pSeekDodgeBehavior;
 	m_pSeekDodgeBehavior = nullptr;
-	delete m_pSeekItemBehavior;
-	m_pSeekItemBehavior = nullptr;
+	delete m_pKillBehavior;
+	m_pKillBehavior = nullptr;
 }
 void Agent::DeleteBlackboard()
 {

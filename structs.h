@@ -61,5 +61,6 @@ enum class BehaviorType
 	SEEK,
 	SEEKDODGE,
 	SEEKITEM,
+	KILL,
 	NONE
 };
