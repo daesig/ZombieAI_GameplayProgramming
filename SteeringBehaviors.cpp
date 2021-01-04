@@ -136,15 +136,17 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	// Slow down when we get close to the goal
 	if (distance < 3.f)
 	{
-		steering.LinearVelocity *= .5f;
-
 		const Elite::Vector2& goalPos{ pAgent->GetGoalPosition() };
 		float angleToGoal = atan2(goalPos.y - agentInfo.Position.y, goalPos.x - agentInfo.Position.x);
+
+		steering.LinearVelocity *= .5f;
+		steering.AutoOrient = false;
+
 		float angleFromAgentToGoal = angleToGoal - orientationAngle;
 		if (angleFromAgentToGoal > float(M_PI) / 4.f)
 		{
-			steering.LinearVelocity.Normalize();
-			steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
+			//steering.LinearVelocity.Normalize();
+			//steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
 			steering.AngularVelocity = agentInfo.MaxAngularSpeed * (angleFromAgentToGoal / abs(angleFromAgentToGoal));
 		}
 	}

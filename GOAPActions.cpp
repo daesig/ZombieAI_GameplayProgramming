@@ -434,10 +434,18 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	}
 
 	// Check if we need a new seek location
-	if (CheckArrival(pInterface, pPlanner, pBlackboard) || requiresNewSeekPos)
+	if (requiresNewSeekPos)
 	{
 		ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
 	}
+	else if (CheckArrival(pInterface, pPlanner, pBlackboard))
+	{
+		if (m_ChooseSeekLocationTimer > m_ChooseSeekLocationTime) {
+		ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
+		m_ChooseSeekLocationTimer = 0;
+		}
+	}
+	m_ChooseSeekLocationTimer += dt;
 
 	/// TODO: remove | Debugging
 	// Debug seek location

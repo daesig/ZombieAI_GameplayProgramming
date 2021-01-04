@@ -122,6 +122,9 @@ private:
 	Elite::Vector2 m_HouseGoalPos{};
 	std::vector<PurgeZoneInfo> m_PurgesZonesInSight{};
 
+	float m_ChooseSeekLocationTimer{};
+	float m_ChooseSeekLocationTime{ .1f };
+
 	// testing
 	float m_IsDoneTime = 4.f;
 	float m_IsDoneTimer = 0.f;
