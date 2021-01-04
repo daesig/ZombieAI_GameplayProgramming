@@ -56,6 +56,12 @@ struct Line
 	float lifeTime{ 5.f };
 };
 
+struct SpottedPurgeZone
+{
+	PurgeZoneInfo purgezoneInfo{};
+	float timeSinceSpotted{ 0 };
+};
+
 enum class EvadeType
 {
 	SEEK,

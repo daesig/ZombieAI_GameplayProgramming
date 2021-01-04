@@ -26,7 +26,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 	// Loop through the open list
 	while (!openlist.empty())
 	{
-		std::cout << "Openlist size: " << openlist.size() << "\n";
 		// Check if all the preconditions have been met
 		std::vector<GOAPProperty*>& preconditions = currentRecord.pAction->GetPreconditions();
 		std::vector<GOAPProperty*> preconditionsToSatifsy{};
@@ -48,7 +47,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 				{
 					if (nr == currentRecord)
 					{
-						std::cout << "same noderecord!!!\n";
 						return nr == currentRecord;
 					}
 					return false;
@@ -63,11 +61,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 			if (openlist.size() > 0)
 				currentRecord = openlist[0];
 			continue;
-		}
-
-		if (preconditionsToSatifsy.size() == 1)
-		{
-			std::cout << "break\n";
 		}
 
 		// Path wasn't found... Search for actions that fullfil the unfulfilled preconditions
@@ -105,11 +98,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 			if (satisfiedPreconditionsFromAction.size() > 0)
 			{
 				bool markActionForAdd = true;
-				std::cout << "new action: " << pPotentialAction->ToString() << " meets at least 1 condition\n";
-				if (pPotentialAction->ToString() == "GOAPSearchItem")
-				{
-					std::cout << "debug\n";
-				}
+				//std::cout << "new action: " << pPotentialAction->ToString() << " meets at least 1 condition\n";
 
 				// Check if they try to satisfy the same property
 				int index{ 0 };
@@ -153,7 +142,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 								if (potentialActionCost < previousActionCost)
 								{
 									// Replace the previous action with this action since it's cheaper
-									std::cout << "Replacing: " << pPreviousAction->ToString() << " with " << pPotentialAction->ToString() << "\n";
+									//std::cout << "Replacing: " << pPreviousAction->ToString() << " with " << pPotentialAction->ToString() << "\n";
 									actionsThatSatisfy[index] = pPotentialAction;
 								}
 								// Else this one is more expensive, ignore the pPotentialAction
@@ -168,7 +157,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 				// Action is not overruled by any previous actions
 				if (markActionForAdd)
 				{
-					std::cout << "Found a new action: " << pPotentialAction->ToString() << "\n";
+					//std::cout << "Found a new action: " << pPotentialAction->ToString() << "\n";
 					actionsThatSatisfy.push_back(pPotentialAction);
 				}
 			}
@@ -210,7 +199,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 					{
 						if (openlistRecord.pAction->ToString() == pAction->ToString())
 						{
-							std::cout << "Action already exists!!\n";
+							//std::cout << "Action already exists!!\n";
 							exists = true;
 						}
 					}
@@ -222,8 +211,7 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 						nr.costSoFar = currentRecord.costSoFar + pAction->GetCost();
 						nr.estimatedTotalCost = GetHeuristicCost(pAction);
 						openlist.push_back(nr);
-						std::cout << "Added to openlist: " << pAction->ToString() << "\n";
-						std::cout << "\n";
+						//std::cout << "Added to openlist: " << pAction->ToString() << "\n";
 					}
 				}
 			);

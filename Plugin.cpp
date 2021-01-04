@@ -48,9 +48,10 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 	//params.LevelFile = "LevelTwo.gppl";
 	//params.LevelFile = "LevelThree.gppl";
 
-	//params.SpawnDebugPistol = false;
+	//params.SpawnDebugPistol = true;
 	//params.SpawnEnemies = false; //Do you want to spawn enemies? (Default = true)
 	//params.EnemyCount = 0; //How many enemies? (Default = 20)
+	params.SpawnPurgeZonesOnMiddleClick = true;
 }
 
 //Only Active in DEBUG Mode

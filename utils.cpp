@@ -88,13 +88,15 @@ bool utils::IsPointInCircle(const Elite::Vector2& point, const Elite::Vector2& c
 	return distanceToCenterSquared <= circleRadius * circleRadius;
 }
 
-bool utils::IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const std::vector<PurgeZoneInfo>& purgezones)
+bool utils::IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const std::vector<SpottedPurgeZone>& purgezones, SpottedPurgeZone& purgezone)
 {
 	bool isPointInPurgeZone{ false };
-	for (const PurgeZoneInfo& pzi : purgezones)
+	for (const SpottedPurgeZone& pzi : purgezones)
 	{
-		if (IsPointInCircle(point, pzi.Center, pzi.Radius))
+		if (IsPointInCircle(point, pzi.purgezoneInfo.Center, pzi.purgezoneInfo.Radius)) {
+			purgezone = pzi;
 			isPointInPurgeZone = true;
+		}
 	}
 	return isPointInPurgeZone;
 }

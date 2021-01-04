@@ -182,7 +182,7 @@ void Agent::Render(IExamInterface* pExamInterface, float dt) const
 	pExamInterface->Draw_Circle(Elite::Vector2{ 0.f,0.f }, 200.f, Elite::Vector3{ 0.f, 0.f, 1.f });
 	for (const Line& l : m_ScoutedVectors)
 	{
-		m_pInterface->Draw_Segment(l.pointA, l.pointB, {1.f,1.f,1.f});
+		m_pInterface->Draw_Segment(l.pointA, l.pointB, { 1.f,1.f,1.f });
 	}
 }
 
@@ -220,7 +220,7 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 }
 
 // Inventory
-bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError)
+bool Agent::GrabItem(EntityInfo& i, IExamInterface* pInterface)
 {
 	// Get info
 	ItemInfo itemInfo;
@@ -231,20 +231,21 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 	float distanceSquared = agentInfo.Position.DistanceSquared(itemInfo.Location);
 	if (distanceSquared < agentInfo.GrabRange * agentInfo.GrabRange)
 	{
-		grabbedType = itemInfo.Type;
-
 		// Don't pick up garbage
-		if (grabbedType == eItemType::GARBAGE)
+		if (itemInfo.Type == eItemType::GARBAGE)
 		{
 			std::cout << "Garbage!\n";
-			pInterface->Item_Destroy(i);
-
-			// The item was processed, return true
-			return true;
+			bool destroyed = pInterface->Item_Destroy(i);
+			return destroyed;
 		}
 
 		// Else, try and add the item to the inventory
-		return AddInventoryItem(i, grabError);
+		bool itemSuccessfullyAdded = AddInventoryItem(i);
+		if (!itemSuccessfullyAdded)
+		{
+			std::cout << "test\n";
+		}
+		return itemSuccessfullyAdded;
 	}
 
 	// No item was grabbed, return false
@@ -318,11 +319,11 @@ bool Agent::WasBitten() const
 {
 	return m_WasBitten;
 }
-bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
+bool Agent::AddInventoryItem(const EntityInfo& entity)
 {
-	int index{ 0 };
 	bool success{ false };
 
+	// Get item info
 	ItemInfo lootedItemInfo;
 	m_pInterface->Item_GetInfo(entity, lootedItemInfo);
 	eItemType lootedItemType{ lootedItemInfo.Type };
@@ -332,6 +333,7 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 	bool requiredItem = lootedItemType == eItemType::FOOD || lootedItemType == eItemType::MEDKIT;
 
 	// Go through the inventory and see if we can add the item
+	int index{ 0 };
 	while (index < m_MaxInventorySlots)
 	{
 		ItemInfo itemInCurrentSlot{};
@@ -341,13 +343,21 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 		if (!itemFound)
 		{
 			// Grab the item from the ground
-			grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			bool grabSuccess = m_pInterface->Item_Grab(entity, lootedItemInfo);
+			if (!grabSuccess) return false;
+
 			// Add the grabbed item to the inventory
-			success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
-			// Process the world states
+			success = m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 			if (success)
+			{
 				ProcessItemWorldState(lootedItemInfo.Type);
-			break;
+				break;
+			}
+			else
+			{
+				std::cout << "failed to add inventory item\n";
+				return false;
+			}
 		}
 		else
 		{
@@ -372,13 +382,26 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 					if (RemoveInventoryItem(index, itemInCurrentSlot))
 					{
 						// Grab the item from the ground
-						grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+						bool grabSuccess = m_pInterface->Item_Grab(entity, lootedItemInfo);
+						if (!grabSuccess) return false;
 						// Add the grabbed item to the inventory
-						success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
-						// Process the world states
+						success = m_pInterface->Inventory_AddItem(index, lootedItemInfo);
 						if (success)
+						{
 							ProcessItemWorldState(lootedItemInfo.Type);
-						break;
+							break;
+						}
+						else
+						{
+							std::cout << "failed to replace add inventory item\n";
+							return false;
+						}
+					}
+					else
+					{
+						// Failed to remove inventory item!
+						std::cout << "failed to remove inventory item\n";
+						return false;
 					}
 				}
 			}
@@ -435,12 +458,21 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 			if (RemoveInventoryItem(random))
 			{
 				// Grab the item from the ground
-				grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+				bool grabSuccess = m_pInterface->Item_Grab(entity, lootedItemInfo);
+				if (!grabSuccess) return false;
 				// Add the grabbed item to the inventory
-				success = grabError && m_pInterface->Inventory_AddItem(random, lootedItemInfo);
+				success = m_pInterface->Inventory_AddItem(random, lootedItemInfo);
 				// Process the world states
 				if (success)
 					ProcessItemWorldState(lootedItemInfo.Type);
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
 			}
 		}
 		else
@@ -564,6 +596,7 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("HouseLocations", &m_Houses);
 	m_pBlackboard->AddData("ItemLocations", &m_Items);
 	m_pBlackboard->AddData("AgentHouse", m_AgentHouse);
+	m_pBlackboard->AddData("AgentInPurgeZone", false);
 
 	// Debug
 	m_pBlackboard->AddData("ScoutedVectors", &m_ScoutedVectors);

@@ -319,58 +319,21 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 
 	// Get blackboard data
 	pBlackboard->GetData("AgentHouse", m_AgentHouse);
-
 	bool requiresNewSeekPos{ false };
-
-	// Try to loot items on the ground
-	if (m_pItemsOnGround->size() > 0)
-	{
-		std::vector<EntityInfo*> grabbedItems{};
-		for (EntityInfo& i : *m_pItemsOnGround)
-		{
-			eItemType grabbedItemType{};
-			bool grabError = false;
-			bool itemPickedUp = m_pAgent->GrabItem(i, eItemType::FOOD, grabbedItemType, pInterface, grabError);
-			if (itemPickedUp)
-			{
-				grabbedItems.push_back(&i);
-
-				for (ExploredHouse& h : *m_pHouseLocations)
-				{
-					++h.itemsLootedSinceExplored;
-				}
-			}
-
-			if (!grabError)
-			{
-				// Grab error
-			}
-		}
-
-		// Remove all the grabbed items from the items on ground list
-		m_pItemsOnGround->erase(std::remove_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems, &requiresNewSeekPos](EntityInfo& e)
-			{
-				for (EntityInfo* grabbedItem : grabbedItems)
-				{
-					if (grabbedItem->Location == e.Location)
-					{
-						requiresNewSeekPos = true;
-						return true;
-					}
-				}
-				return false;
-			}
-		), m_pItemsOnGround->end());
-	}
-
-	auto vEntitiesInFov = utils::GetEntitiesInFOV(pInterface);
-	auto vHousesInFOV = utils::GetHousesInFOV(pInterface);
 
 	// Get the info from the agent
 	const AgentInfo& agentInfo = pInterface->Agent_GetInfo();
 
-	m_PurgesZonesInSight.clear();
+	// Remove old purgezones
+	m_PurgesZonesInSight.erase(std::remove_if(m_PurgesZonesInSight.begin(), m_PurgesZonesInSight.end(), [](SpottedPurgeZone& spz)
+		{
+			return spz.timeSinceSpotted > 3.f;
+		}), m_PurgesZonesInSight.end()
+			);
+
 	// Check for items and purgezones
+	bool isInPurgeZone{ false };
+	auto vEntitiesInFov = utils::GetEntitiesInFOV(pInterface);
 	for (EntityInfo& entity : vEntitiesInFov)
 	{
 		if (entity.Type == eEntityType::ITEM)
@@ -382,7 +345,8 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 				// See if we already know the item
 				auto foundIt = std::find_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&itemInfo](EntityInfo& item)
 					{
-						return item.Location == itemInfo.Location;
+						float distanceSquared = item.Location.DistanceSquared(itemInfo.Location);
+						return distanceSquared < 1.f;
 					}
 				);
 
@@ -399,19 +363,80 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		{
 			PurgeZoneInfo pzi;
 			pInterface->PurgeZone_GetInfo(entity, pzi);
-			m_PurgesZonesInSight.push_back(pzi);
+
+			auto findPurgezone = std::find_if(m_PurgesZonesInSight.begin(), m_PurgesZonesInSight.end(), [&pzi](const SpottedPurgeZone& spz)
+				{
+					return spz.purgezoneInfo.Center == pzi.Center;
+				}
+			);
+
+			// Add the newly found purgezone
+			if (findPurgezone == m_PurgesZonesInSight.end())
+				m_PurgesZonesInSight.push_back(SpottedPurgeZone{ pzi, 0.f });
 
 			// Make the action seek a new position if the agent happened to be inside of the purge zone
 			if (utils::IsPointInCircle(agentInfo.Position, pzi.Center, pzi.Radius))
 			{
 				requiresNewSeekPos = true;
+				isInPurgeZone = true;
 			}
 		}
 	}
 
+	// Try to loot items on the ground
+	if (m_pItemsOnGround->size() > 0)
+	{
+		int startSize = m_pItemsOnGround->size();
+		std::vector<EntityInfo*> grabbedItems{};
+		for (EntityInfo& i : *m_pItemsOnGround)
+		{
+			bool grabError = false;
+			bool itemPickedUp = m_pAgent->GrabItem(i, pInterface);
+			if (itemPickedUp)
+			{
+				std::cout << "grabbed item: " << i.EntityHash << "\n";
+				grabbedItems.push_back(&i);
+				requiresNewSeekPos = true;
+				m_ItemLootedPosition = i.Location;
+
+				for (ExploredHouse& h : *m_pHouseLocations)
+				{
+					++h.itemsLootedSinceExplored;
+				}
+			}
+		}
+
+		if (grabbedItems.size() > 0)
+		{
+			// Remove all the grabbed items from the items on ground list
+			m_pItemsOnGround->erase(std::remove_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems](EntityInfo& e)
+				{
+					for (EntityInfo* grabbedItem : grabbedItems)
+					{
+						if (grabbedItem->Location == e.Location)
+						{
+							return true;
+						}
+					}
+					return false;
+				}
+			), m_pItemsOnGround->end());
+
+			if (m_pItemsOnGround->size() == startSize)
+			{
+				while (true)
+				{
+					std::cout << "PROBLEM purposely went into infinte loop for testing!!!!\n";
+				}
+			}
+		}
+	}
+
+	auto vHousesInFOV = utils::GetHousesInFOV(pInterface);
+	pBlackboard->ChangeData("AgentInPurgeZone", isInPurgeZone);
 
 	// Go into kill behavior if we're not in a house and we have a weapon
-	if (m_pWorldState->IsStateMet("HasWeapon", true) && !m_AgentHouse)
+	if (m_pWorldState->IsStateMet("HasWeapon", true) /*&& !m_AgentHouse*/)
 	{
 		m_pAgent->SetBehavior(BehaviorType::KILL);
 	}
@@ -458,6 +483,12 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	}
 	m_ChooseSeekLocationTimer += dt;
 
+	// Update time for spotted purgezones
+	for (SpottedPurgeZone& spz : m_PurgesZonesInSight)
+	{
+		spz.timeSinceSpotted += dt;
+	}
+
 	/// TODO: remove | Debugging
 	// Debug seek location
 	pInterface->Draw_SolidCircle(m_pAgent->GetGoalPosition(), 3.f, {}, { 0.f,1.f,0.f });
@@ -500,7 +531,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			for (EntityInfo& i : *m_pItemsOnGround)
 			{
 				// Check if the item is located inside of a purge zone
-				bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(i.Location, m_PurgesZonesInSight) };
+				SpottedPurgeZone sp;
+				bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(i.Location, m_PurgesZonesInSight,sp) };
 
 				// Only go for an item if it's not inside of the purgezone
 				if (!isInPurgeZone)
@@ -517,6 +549,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			// Check if we found a nearby item and set the destination
 			if (pClosestItem)
 			{
+				std::cout << "closest item found\n";
+				m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
 				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
 			}
 			else
@@ -533,7 +567,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		for (ExploredHouse& h : *m_pHouseLocations)
 		{
 			// Check if the house is located inside of a purge zone
-			bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(h.houseInfo.Center, m_PurgesZonesInSight) };
+			SpottedPurgeZone sp;
+			bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(h.houseInfo.Center, m_PurgesZonesInSight,sp) };
 
 			// Only make the house available if it's not withing a purgezone
 			if (!isInPurgeZone)
@@ -558,6 +593,7 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			if (pClosestHouse)
 			{
 				m_HouseGoalPos = pClosestHouse->houseInfo.Center;
+				m_pAgent->SetDistantGoalPosition(m_HouseGoalPos);
 				destination = pInterface->NavMesh_GetClosestPathPoint(m_HouseGoalPos);
 			}
 			else
@@ -571,13 +607,19 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		{
 			m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
 			destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
+			std::cout << "Closest item found and its closer than the house\n";
 		}
 		foundPath = true;
 	}
 	else if (pClosestHouse)
 	{
-		m_pAgent->SetDistantGoalPosition(pClosestHouse->houseInfo.Center);
-		foundPath = true;
+		SpottedPurgeZone pz;
+		if (!utils::IsLocationInsideGivenPurgezones(pClosestHouse->houseInfo.Center, m_PurgesZonesInSight, pz))
+		{
+			m_pAgent->SetDistantGoalPosition(pClosestHouse->houseInfo.Center);
+			std::cout << "ClosestHouse chosen\n";
+			foundPath = true;
+		}
 	}
 
 	// Found path to a house corner
@@ -590,7 +632,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			for (const Elite::Vector2& cornerLoc : (*m_pHouseCornerLocations))
 			{
 				// Check if the house is located inside of a purge zone
-				bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(cornerLoc, m_PurgesZonesInSight) };
+				SpottedPurgeZone sp;
+				bool isInPurgeZone{ utils::IsLocationInsideGivenPurgezones(cornerLoc, m_PurgesZonesInSight,sp) };
 
 				// Only make the corner available if it's not withing a purgezone
 				if (!isInPurgeZone)
@@ -614,8 +657,10 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		{
 			// No more corners to discover
 			// All explored houses are unavailable
-			// TODO: Search for more houses
 			std::cout << "no more corners\n";
+			int randomhouse = Elite::randomInt(m_pHouseLocations->size());
+			ExploredHouse& randomHouse = m_pHouseLocations->at(randomhouse);
+			randomHouse.itemsLootedSinceExplored = 999;
 		}
 	}
 

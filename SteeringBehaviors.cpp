@@ -135,7 +135,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		const Elite::Vector2& goalPos{ pAgent->GetGoalPosition() };
 		float angleToGoal = atan2(goalPos.y - agentInfo.Position.y, goalPos.x - agentInfo.Position.x);
 
-		steering.LinearVelocity *= .5f;
+		//steering.LinearVelocity *= .5f;
 		steering.AutoOrient = false;
 		//steering.AngularVelocity = 1.f;
 
@@ -179,9 +179,15 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 			steering.RunMode = true;
 	}
 
+	bool isInPurgeZone{ false };
+	if (pBlackboard->GetData("AgentInPurgeZone", isInPurgeZone))
+	{
+		if (isInPurgeZone)
+			steering.RunMode = true;
+	}
+
 	// Debug agent velocity
 	pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
-
 	return steering;
 }
 

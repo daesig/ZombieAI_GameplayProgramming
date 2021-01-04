@@ -118,9 +118,11 @@ protected:
 private:
 	Elite::Vector2 m_selectedLocation{};
 	float m_ArrivalRange = 3.5f;
-	int m_ItemsToLootBeforeHouseRevisit = 35;
+	int m_ItemsToLootBeforeHouseRevisit = 28;
 	Elite::Vector2 m_HouseGoalPos{};
-	std::vector<PurgeZoneInfo> m_PurgesZonesInSight{};
+	std::vector<SpottedPurgeZone> m_PurgesZonesInSight{};
+
+	Elite::Vector2 m_ItemLootedPosition{};
 
 	float m_ChooseSeekLocationTimer{};
 	float m_ChooseSeekLocationTime{ .25f };

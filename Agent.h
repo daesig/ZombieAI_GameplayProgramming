@@ -29,7 +29,7 @@ public:
 	void SetBehavior(BehaviorType behaviorType);
 	void SetSeekPos(Elite::Vector2 seekPos);
 
-	bool GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError);
+	bool GrabItem(EntityInfo& i, IExamInterface* pInterface);
 	bool ConsumeItem(const eItemType& itemType);
 	bool Shoot();
 
@@ -96,7 +96,7 @@ private:
 	std::vector<Line> m_ScoutedVectors{};
 
 	// Private functions
-	bool AddInventoryItem(const EntityInfo& item,bool& grabError);
+	bool AddInventoryItem(const EntityInfo& item);
 	bool RemoveInventoryItem(int itemIndex);
 	bool RemoveInventoryItem(int itemIndex, const ItemInfo& itemInfo);
 	int GetItemStackSize(ItemInfo& itemInfo) const;
