@@ -314,6 +314,8 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	if (!utils::VitalStatisticsAreOk(m_pWorldState))
 		return false;
 
+	bool requiresNewSeekPos{ false };
+
 	// Try to loot items on the ground
 	if (m_pItemsOnGround->size() > 0)
 	{
@@ -335,25 +337,23 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		}
 
 		// Remove all the grabbed items from the items on ground list
-		auto findIt = std::find_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems](EntityInfo& e)
+		m_pItemsOnGround->erase(std::remove_if(m_pItemsOnGround->begin(), m_pItemsOnGround->end(), [&grabbedItems, &requiresNewSeekPos](EntityInfo& e)
 			{
 				for (EntityInfo* grabbedItem : grabbedItems)
 				{
 					if (grabbedItem->Location == e.Location)
+					{
 						return true;
+						requiresNewSeekPos = true;
+					}
 				}
 				return false;
 			}
-		);
-
-		// Erase found items
-		if (findIt != m_pItemsOnGround->end())
-			m_pItemsOnGround->erase(findIt);
+		), m_pItemsOnGround->end());
 	}
 
 	auto vEntitiesInFov = utils::GetEntitiesInFOV(pInterface);
 	auto vHousesInFOV = utils::GetHousesInFOV(pInterface);
-	bool requiresNewSeekPos{ false };
 
 	// Get the info from the agent
 	const AgentInfo& agentInfo = pInterface->Agent_GetInfo();

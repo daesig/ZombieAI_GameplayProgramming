@@ -220,15 +220,13 @@ bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& gr
 		{
 			std::cout << "Garbage!\n";
 			pInterface->Item_Destroy(i);
-		}
-		// Non-garbage. Pick up
-		else
-		{
-			return AddInventoryItem(i, grabError);
+
+			// The item was processed, return true
+			return true;
 		}
 
-		// The item was processed, return true
-		return true;
+		// Else, try and add the item to the inventory
+		return AddInventoryItem(i, grabError);
 	}
 
 	// No item was grabbed, return false
@@ -315,6 +313,7 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 	std::vector<int> foodFoundIndices{  };
 	bool requiredItem = lootedItemType == eItemType::FOOD || lootedItemType == eItemType::MEDKIT;
 
+	// Go through the inventory and see if we can add the item
 	while (index < m_MaxInventorySlots)
 	{
 		ItemInfo itemInCurrentSlot{};
@@ -323,7 +322,6 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 		// Found an empty inventory slot
 		if (!itemFound)
 		{
-			std::cout << "Added item to inventory slots: " << index << " \n";
 			// Grab the item from the ground
 			grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
 			// Add the grabbed item to the inventory
@@ -335,7 +333,7 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 		}
 		else
 		{
-			// Process item counts
+			// Process item counts to make sure we always maintain one of these items if possible
 			switch (itemInCurrentSlot.Type)
 			{
 			case eItemType::MEDKIT:
@@ -346,22 +344,24 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 				break;
 			}
 
+			// The itemtype we found is the same as the itemtype we looted
 			if (itemInCurrentSlot.Type == lootedItemType)
 			{
-				std::cout << "Item already exists in inventory\n";
-				// Current item stack is smaller
+				// Check if the current item stack is smaller
 				if (GetItemStackSize(itemInCurrentSlot) < GetItemStackSize(lootedItemInfo))
 				{
 					// Clear the current inventory slot
-					m_pInterface->Inventory_RemoveItem(index);
-					// Grab the item from the ground
-					grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
-					// Add the grabbed item to the inventory
-					success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
-					// Process the world states
-					if (success)
-						ProcessItemWorldState(lootedItemInfo.Type);
-					break;
+					if (RemoveInventoryItem(index, itemInCurrentSlot))
+					{
+						// Grab the item from the ground
+						grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+						// Add the grabbed item to the inventory
+						success = grabError && m_pInterface->Inventory_AddItem(index, lootedItemInfo);
+						// Process the world states
+						if (success)
+							ProcessItemWorldState(lootedItemInfo.Type);
+						break;
+					}
 				}
 			}
 		}
@@ -393,6 +393,8 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 			// Improvements: Possible to not replace the best food / best medkit if we keep count of how many there are in which index
 			bool randomIsValid{ false };
 			int random;
+
+			// Find a valid inventory slot to replace the item with
 			while (!randomIsValid)
 			{
 				randomIsValid = true;
@@ -412,15 +414,16 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 			}
 
 			// Random was chosen, replace the item in question
-			// Clear the current inventory slot
-			m_pInterface->Inventory_RemoveItem(random);
-			// Grab the item from the ground
-			grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
-			// Add the grabbed item to the inventory
-			success = grabError && m_pInterface->Inventory_AddItem(random, lootedItemInfo);
-			// Process the world states
-			if (success)
-				ProcessItemWorldState(lootedItemInfo.Type);
+			if (RemoveInventoryItem(random))
+			{
+				// Grab the item from the ground
+				grabError = m_pInterface->Item_Grab(entity, lootedItemInfo);
+				// Add the grabbed item to the inventory
+				success = grabError && m_pInterface->Inventory_AddItem(random, lootedItemInfo);
+				// Process the world states
+				if (success)
+					ProcessItemWorldState(lootedItemInfo.Type);
+			}
 		}
 		else
 		{
@@ -430,6 +433,29 @@ bool Agent::AddInventoryItem(const EntityInfo& entity, bool& grabError)
 	}
 
 	return success;
+}
+bool Agent::RemoveInventoryItem(int itemIndex)
+{
+	ItemInfo itemInfo;
+	m_pInterface->Inventory_GetItem(itemIndex, itemInfo);
+	return RemoveInventoryItem(itemIndex, itemInfo);
+}
+bool Agent::RemoveInventoryItem(int itemIndex, const ItemInfo& itemInfo)
+{
+	bool removed = false;
+	// Removing food or medkits would be a waste without using them up
+	if (itemInfo.Type == eItemType::FOOD || itemInfo.Type == eItemType::MEDKIT)
+	{
+		m_pInterface->Inventory_UseItem(itemIndex);
+		removed = m_pInterface->Inventory_RemoveItem(itemIndex);
+		ProcessItemWorldState(itemInfo.Type);
+	}
+	else
+	{
+		removed = m_pInterface->Inventory_RemoveItem(itemIndex);
+	}
+
+	return removed;
 }
 int Agent::GetItemStackSize(ItemInfo& itemInfo) const
 {
@@ -450,7 +476,7 @@ int Agent::GetItemStackSize(ItemInfo& itemInfo) const
 
 	return stackSize;
 }
-void Agent::ProcessItemWorldState(eItemType& itemType)
+void Agent::ProcessItemWorldState(const eItemType& itemType)
 {
 	switch (itemType)
 	{

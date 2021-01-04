@@ -92,8 +92,10 @@ private:
 
 	// Private functions
 	bool AddInventoryItem(const EntityInfo& item,bool& grabError);
+	bool RemoveInventoryItem(int itemIndex);
+	bool RemoveInventoryItem(int itemIndex, const ItemInfo& itemInfo);
 	int GetItemStackSize(ItemInfo& itemInfo) const;
-	void ProcessItemWorldState(eItemType& itemType);
+	void ProcessItemWorldState(const eItemType& itemType);
 
 	void Initialize();
 	void InitializeBlackboard();

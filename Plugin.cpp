@@ -45,7 +45,6 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 	//params.LevelFile = "LevelTwo.gppl";
 	//params.LevelFile = "LevelThree.gppl";
 	params.SpawnDebugPistol = false;
-	params.SpawnPurgeZonesOnMiddleClick = true;
 }
 
 //Only Active in DEBUG Mode
