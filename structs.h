@@ -46,7 +46,7 @@ struct NodeRecord
 struct ExploredHouse
 {
 	HouseInfo houseInfo;
-	float timeSinceExplored;
+	int itemsLootedSinceExplored;
 };
 
 enum class EvadeType

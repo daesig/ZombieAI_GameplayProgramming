@@ -99,12 +99,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 
 	m_EnemyCount = vEntitiesInFOV.size();
 
-	// Update explored houses time
-	for (ExploredHouse& h : m_Houses)
-	{
-		h.timeSinceExplored += dt;
-	}
-
 	// Update FSM states
 	if (m_pDecisionMaking)
 	{

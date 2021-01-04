@@ -328,6 +328,11 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 			if (itemPickedUp)
 			{
 				grabbedItems.push_back(&i);
+
+				for (ExploredHouse& h : *m_pHouseLocations)
+				{
+					++h.itemsLootedSinceExplored;
+				}
 			}
 
 			if (!grabError)
@@ -425,7 +430,7 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		if (foundIterator == m_pHouseLocations->end())
 		{
 			// Add the house to the known locations
-			m_pHouseLocations->push_back(ExploredHouse{ house, FLT_MAX });
+			m_pHouseLocations->push_back(ExploredHouse{ house, 999 });
 			// Remove all corner locations of this house
 			RemoveExploredCornerLocations(house);
 			// Choose a new seek location
@@ -528,7 +533,7 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			// Only make the house available if it's not withing a purgezone
 			if (!isInPurgeZone)
 			{
-				if (h.timeSinceExplored > m_HouseExploreCooldown)
+				if (h.itemsLootedSinceExplored > m_ItemsToLootBeforeHouseRevisit)
 					possibleHouses.push_back(&h);
 			}
 		}
@@ -625,7 +630,7 @@ bool GOAPSearchItem::CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlan
 		// Is he in a house?
 		ExploredHouse* pHouse = IsAgentInHouse(agentPos);
 		if (pHouse)
-			pHouse->timeSinceExplored = 0.f;
+			pHouse->itemsLootedSinceExplored = 0;
 	}
 
 	// Has the agent arrived at it's location

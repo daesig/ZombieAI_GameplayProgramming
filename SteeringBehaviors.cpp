@@ -51,7 +51,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
 		std::cout << "Asking new route towards goal...\n";
-		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
+		//pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
 		m_NavMeshRefreshTimer = 0.f;
 	}
 	m_NavMeshRefreshTimer += deltaT;
@@ -71,7 +71,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	// Map orientation to a normal angle...
 	float orientationAngle = utils::GetCorrectedOrientationAngleInDeg(agentInfo.Orientation);
 	orientationAngle = fmod(orientationAngle, 360.f);
-	//orientationAngle = orientationAngle * float(M_PI) / 180.f;
+	float orientationAngleRad = orientationAngle * float(M_PI) / 180.f;
 
 	if (enemyInSight)
 	{
@@ -105,13 +105,12 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 		// Convert angle back to radians
 		angleToEnemy = angleToEnemyDeg * float(M_PI) / 180.f;
-		orientationAngle = orientationAngle * float(M_PI) / 180.f;
 
 		if (changeGoal)
 		{
 			// Set a new goal position that dodges the enemy
 			float halfPi = float(M_PI) / 2.f;
-			Elite::Vector2 newGoal = agentInfo.Position + Elite::Vector2{ cos(orientationAngle + -angleToEnemy) * dodgeRange, sin(orientationAngle + -angleToEnemy) * dodgeRange };
+			Elite::Vector2 newGoal = agentInfo.Position + Elite::Vector2{ cos(orientationAngleRad + -angleToEnemy) * dodgeRange, sin(orientationAngleRad + -angleToEnemy) * dodgeRange };
 			pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(newGoal));
 			steering.RunMode = true;
 		}
@@ -130,7 +129,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		steering.RunMode = true;
 	}
 
-	// Slow down when we get close to the goal
+	// Slow down when we get close to the goal and face the target
 	if (distance < 3.f)
 	{
 		const Elite::Vector2& goalPos{ pAgent->GetGoalPosition() };
@@ -138,14 +137,40 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 		steering.LinearVelocity *= .5f;
 		steering.AutoOrient = false;
+		//steering.AngularVelocity = 1.f;
 
-		float angleFromAgentToGoal = angleToGoal - orientationAngle;
-		if (angleFromAgentToGoal > float(M_PI) / 4.f)
+		// Determine the angle from our orientation towards the goal
+		float angleFromAgentToGoal = angleToGoal - orientationAngleRad;
+		if (angleFromAgentToGoal > float(M_PI))
+			angleFromAgentToGoal -= float(M_PI) * 2.f;
+		if (angleFromAgentToGoal < -float(M_PI))
+			angleFromAgentToGoal += float(M_PI) * 2.f;
+
+		if (abs(angleFromAgentToGoal) < .1f)
 		{
-			//steering.LinearVelocity.Normalize();
-			//steering.LinearVelocity *= agentInfo.MaxLinearSpeed;
-			steering.AngularVelocity = agentInfo.MaxAngularSpeed * (angleFromAgentToGoal / abs(angleFromAgentToGoal));
+			steering.AutoOrient = false;
+			steering.AngularVelocity = 0.f;
 		}
+		else
+		{
+			float sign = angleFromAgentToGoal / abs(angleFromAgentToGoal);
+			steering.AngularVelocity = agentInfo.MaxAngularSpeed * sign;
+		}
+
+
+
+		//if (angleFromAgentToGoal > .1f)
+		//{
+		//	steering.AngularVelocity = agentInfo.MaxAngularSpeed;
+		//}
+		//else if (angleFromAgentToGoal < -.1f)
+		//{
+		//	steering.AngularVelocity = -agentInfo.MaxAngularSpeed;
+		//}
+		//else
+		//{
+		//	//steering.AutoOrient = true;
+		//}
 	}
 	else
 	{
