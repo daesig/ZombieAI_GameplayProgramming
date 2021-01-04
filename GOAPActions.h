@@ -125,6 +125,8 @@ private:
 	float m_ChooseSeekLocationTimer{};
 	float m_ChooseSeekLocationTime{ .25f };
 
+	ExploredHouse* m_AgentHouse = nullptr;
+
 	// testing
 	float m_IsDoneTime = 4.f;
 	float m_IsDoneTimer = 0.f;
@@ -134,7 +136,6 @@ private:
 	void ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	bool CheckArrival(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard);
 	void RemoveExploredCornerLocations(HouseInfo& houseInfo);
-	ExploredHouse* IsAgentInHouse(const Elite::Vector2& agentPos);
 };
 
 class GOAPSearchForFood final : public GOAPSearchItem
@@ -189,4 +190,27 @@ private:
 
 	virtual bool CheckPreConditions(GOAPPlanner* pPlanner) const override;
 	virtual bool CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+};
+
+class GOAPFastHouseScout final : public GOAPAction
+{
+public:
+	GOAPFastHouseScout(GOAPPlanner* pPlanner);
+	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
+	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt) override;
+	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
+private:
+	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
+	virtual void InitEffects(GOAPPlanner* pPlanner) override;
+
+	std::vector<ExploredHouse>* m_pHouseLocations = nullptr;
+	std::vector<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
+	int m_PositionsToCheck{ 9 };
+	int m_Cycles{ 3 };
+	float m_OffcycleAngleOffset{ 33.f };
+	float m_DistanceFromAgent{ 50.f };
+	float m_DistanceIncreasePerCycle{ 25.f };
+	float m_IgnoreLocationDistance{ 5.f };
+
+	WorldInfo m_WorldInfo{};
 };

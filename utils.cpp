@@ -67,15 +67,25 @@ std::vector<GOAPProperty*> utils::GetUnsatisfiedActionEffects(const std::vector<
 	return unsatisfiedEffects;
 }
 
-inline bool utils::IsPointInHouse(const Elite::Vector2& point, const HouseInfo& house, float margin)
+bool utils::IsPointInRect(const Elite::Vector2& point, const Elite::Vector2 centerPoint, const Elite::Vector2& size, float margin)
 {
-	return true;
+	float halfWidth = size.x / 2.f;
+	float halfHeight = size.y / 2.f;
+
+	// Check if agent location is in the house
+	if ((point.x + margin < centerPoint.x + halfWidth) && (point.x - margin > centerPoint.x - halfWidth) &&
+		(point.y + margin < centerPoint.y + halfHeight) && (point.y - margin > centerPoint.y - halfHeight))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 bool utils::IsPointInCircle(const Elite::Vector2& point, const Elite::Vector2& circleCenter, float circleRadius)
 {
 	float distanceToCenterSquared = point.DistanceSquared(circleCenter);
-	return distanceToCenterSquared <= circleRadius* circleRadius;
+	return distanceToCenterSquared <= circleRadius * circleRadius;
 }
 
 bool utils::IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const std::vector<PurgeZoneInfo>& purgezones)

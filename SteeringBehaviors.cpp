@@ -51,7 +51,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
 		std::cout << "Asking new route towards goal...\n";
-		//pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
+		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
 		m_NavMeshRefreshTimer = 0.f;
 	}
 	m_NavMeshRefreshTimer += deltaT;

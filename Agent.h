@@ -66,11 +66,15 @@ private:
 	// Exploration
 	std::list<Elite::Vector2> m_ExploredTileLocations{};
 	std::vector<ExploredHouse> m_Houses{};
+	ExploredHouse* m_AgentHouse = nullptr;
 	std::list<EntityInfo> m_Items{};
 	Elite::Vector2 m_GoalPosition{ 0.f,0.f };
 	Elite::Vector2 m_DistantGoalPosition{ 0.f,0.f };
 	float m_ExploredLocationRefreshTime = .1f;
 	float m_ExploredLocationTimer = 0.f;
+	// Fast scout goap action worldstate timer
+	float m_FastScoutTimer = 0.f; // Current timer towards doing a fast scout
+	float m_FastScoutTime = 3.f; // Required time for doing a fastscout
 
 	// Enemy tracking
 	Elite::Vector2 m_LastSeenClosestEnemy{};
@@ -96,6 +100,7 @@ private:
 	bool RemoveInventoryItem(int itemIndex, const ItemInfo& itemInfo);
 	int GetItemStackSize(ItemInfo& itemInfo) const;
 	void ProcessItemWorldState(const eItemType& itemType);
+	void SetAgentHouseInBlackboard(const Elite::Vector2& agentPos);
 
 	void Initialize();
 	void InitializeBlackboard();

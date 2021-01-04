@@ -33,7 +33,11 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	SteeringPlugin_Output steering{};
 
 	AgentInfo& agentInfo = m_pInterface->Agent_GetInfo();
-	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...)
+
+	// Set the house the agent is in
+	SetAgentHouseInBlackboard(agentInfo.Position);
+
+	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...) 
 	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	// Manage bitten status
@@ -48,6 +52,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 		m_WasBitten = false;
 	}
 
+	// Manage worldstates
 	// Manage vitals
 	if (agentInfo.Energy < m_MimimumRequiredFood)
 		m_pWorldState->SetState("RequiresFood", true);
@@ -57,7 +62,17 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	{
 		m_pWorldState->SetState("HasGoal", false);
 	}
+	// Reset worldstate
+	m_pWorldState->SetState("EnemyInSight", false);
+	// Manage fast scout timer
+	if (m_FastScoutTimer > m_FastScoutTime)
+	{
+		m_FastScoutTimer = 0.f;
+		m_pWorldState->SetState("FastScoutAllowed", true);
+	}
+	m_FastScoutTimer += dt;
 
+	// Debugging
 	if (m_DebugTimer > m_DebugTime)
 	{
 		m_DebugTimer = 0.f;
@@ -69,9 +84,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 		}
 	}
 	m_DebugTimer += dt;
-
-	// Reset worldstate
-	m_pWorldState->SetState("EnemyInSight", false);
 
 	// Get most nearby enemy and enemy count
 	float closestDistanceSq{ FLT_MAX };
@@ -485,6 +497,25 @@ void Agent::ProcessItemWorldState(const eItemType& itemType)
 		break;
 	}
 }
+void Agent::SetAgentHouseInBlackboard(const Elite::Vector2& agentPos)
+{
+	ExploredHouse* pHouse = nullptr;
+	for (ExploredHouse& h : m_Houses)
+	{
+		float housePadding{ 1.f };
+		float halfWidth = h.houseInfo.Size.x / 2.f;
+		float halfHeight = h.houseInfo.Size.y / 2.f;
+		// Check if agent location is in the house
+		if ((agentPos.x + housePadding < h.houseInfo.Center.x + halfWidth) && (agentPos.x - housePadding > h.houseInfo.Center.x - halfWidth) &&
+			(agentPos.y + housePadding < h.houseInfo.Center.y + halfHeight) && (agentPos.y - housePadding > h.houseInfo.Center.y - halfHeight))
+		{
+			pHouse = &h;
+			break;
+		}
+	}
+
+	m_pBlackboard->ChangeData("AgentHouse", pHouse);
+}
 
 // Initialization
 void Agent::Initialize()
@@ -520,6 +551,7 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("PriorityAction", false);
 	m_pBlackboard->AddData("HouseLocations", &m_Houses);
 	m_pBlackboard->AddData("ItemLocations", &m_Items);
+	m_pBlackboard->AddData("AgentHouse", m_AgentHouse);
 }
 void Agent::InitializeBehaviors()
 {
@@ -540,12 +572,14 @@ void Agent::InitializeGOAP()
 	GOAPAction* pGOAPSearchForFood = new GOAPSearchForFood(m_pGOAPPlanner);
 	GOAPAction* pGOAPSearchForMedkit = new GOAPSearchForMedkit(m_pGOAPPlanner);
 	GOAPAction* pSearchItem = new GOAPSearchItem(m_pGOAPPlanner);
+	GOAPAction* pFastScout = new GOAPFastHouseScout(m_pGOAPPlanner);
 	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
 	m_pActions.push_back(pGOAPConsumeFood);
 	m_pActions.push_back(pGOAPConsumeMedkit);
 	m_pActions.push_back(pGOAPSearchForFood);
 	m_pActions.push_back(pGOAPSearchForMedkit);
 	m_pActions.push_back(pSearchItem);
+	m_pActions.push_back(pFastScout);
 	//...
 
 	// Let the planner know all the action this agent can do

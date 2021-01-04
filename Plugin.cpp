@@ -41,13 +41,16 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 	params.EnemyCount = 20; //How many enemies? (Default = 20)
 	params.GodMode = false; //GodMode > You can't die, can be usefull to inspect certain behaviours (Default = false)
 	params.AutoGrabClosestItem = false; //A call to Item_Grab(...) returns the closest item that can be grabbed. (EntityInfo argument is ignored)
+
+	// Debug params
+
 	//params.LevelFile = "LevelOne.gppl";
 	//params.LevelFile = "LevelTwo.gppl";
 	//params.LevelFile = "LevelThree.gppl";
-	params.SpawnDebugPistol = false;
 
-	params.SpawnEnemies = false; //Do you want to spawn enemies? (Default = true)
-	params.EnemyCount = 0; //How many enemies? (Default = 20)
+	//params.SpawnDebugPistol = false;
+	//params.SpawnEnemies = false; //Do you want to spawn enemies? (Default = true)
+	//params.EnemyCount = 0; //How many enemies? (Default = 20)
 }
 
 //Only Active in DEBUG Mode

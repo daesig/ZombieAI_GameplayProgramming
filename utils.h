@@ -11,7 +11,7 @@ namespace utils {
 	void AddActionProperty(GOAPProperty* pProperty, std::vector<GOAPProperty*>& properties, WorldState* pWorldState, bool defaultValue = false);
 	std::vector<GOAPProperty*> GetUnsatisfiedActionEffects(const std::vector<GOAPProperty*>& effects, WorldState* pWorldState);
 
-	inline bool IsPointInHouse(const Elite::Vector2& point, const HouseInfo& house, float margin);
+	bool IsPointInRect(const Elite::Vector2& point, const Elite::Vector2 centerPoint, const Elite::Vector2& size, float margin = 3.f);
 	bool IsPointInCircle(const Elite::Vector2& point, const Elite::Vector2& circleCenter, float circleRadius);
 	bool IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const std::vector<PurgeZoneInfo>& purgezones);
 
