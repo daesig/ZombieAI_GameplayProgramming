@@ -47,17 +47,14 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 		&& pBlackboard->GetData("WorldState", pWorldState);
 	if (!dataValid) return steering;
 
-	if (changeGoal)
+	// Recalculate goal pos due to all the navmesh bugs
+	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
-		// Recalculate goal pos due to all the navmesh bugs
-		if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
-		{
-			std::cout << "Asking new route towards goal...\n";
-			pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
-			m_NavMeshRefreshTimer = 0.f;
-		}
-		m_NavMeshRefreshTimer += deltaT;
+		std::cout << "Asking new route towards goal...\n";
+		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
+		m_NavMeshRefreshTimer = 0.f;
 	}
+	m_NavMeshRefreshTimer += deltaT;
 
 	bool enemyInSight = false;
 	if (!pWorldState->GetState("EnemyInSight", enemyInSight))
