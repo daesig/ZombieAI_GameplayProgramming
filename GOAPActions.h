@@ -123,7 +123,7 @@ private:
 	std::vector<PurgeZoneInfo> m_PurgesZonesInSight{};
 
 	float m_ChooseSeekLocationTimer{};
-	float m_ChooseSeekLocationTime{ .1f };
+	float m_ChooseSeekLocationTime{ .25f };
 
 	// testing
 	float m_IsDoneTime = 4.f;

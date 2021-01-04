@@ -343,8 +343,8 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 				{
 					if (grabbedItem->Location == e.Location)
 					{
-						return true;
 						requiresNewSeekPos = true;
+						return true;
 					}
 				}
 				return false;
@@ -440,9 +440,10 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	}
 	else if (CheckArrival(pInterface, pPlanner, pBlackboard))
 	{
-		if (m_ChooseSeekLocationTimer > m_ChooseSeekLocationTime) {
-		ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
-		m_ChooseSeekLocationTimer = 0;
+		if (m_ChooseSeekLocationTimer > m_ChooseSeekLocationTime)
+		{
+			ChooseSeekLocation(pInterface, pPlanner, pBlackboard);
+			m_ChooseSeekLocationTimer = 0.f;
 		}
 	}
 	m_ChooseSeekLocationTimer += dt;
