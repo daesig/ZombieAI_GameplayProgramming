@@ -192,6 +192,7 @@ private:
 	virtual bool CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
 };
 
+// TODO: merge with GOAPFindGeneralHouseLocationsAction
 class GOAPFastHouseScout final : public GOAPAction
 {
 public:
