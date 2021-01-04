@@ -868,6 +868,8 @@ void GOAPFastHouseScout::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner
 		return;
 	}
 
+	pBlackboard->GetData("ScoutedVectors", m_pScoutedVectors);
+
 	m_WorldInfo = pInterface->World_GetInfo();
 }
 bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
@@ -885,15 +887,22 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 	float angleIncrement = 360.f / positionsPerCycle;
 	float angle{ 0.f };
 
+	const Elite::Vector2& agentPos = pInterface->Agent_GetInfo().Position;
+
 	while (positionsChecked < positionsPerCycle)
 	{
 		// Find a point to explore
 		float distance = m_DistanceFromAgent + cycle * m_DistanceIncreasePerCycle;
-		Elite::Vector2 locationToExplore{ cos(angle) * distance, sin(angle) * distance };
+		Elite::Vector2 locationToExplore{ agentPos.x + cos(angle) * distance, agentPos.y + sin(angle) * distance };
 		// Make sure it's inside of the navmesh
 		if (utils::IsPointInRect(locationToExplore, m_WorldInfo.Center, m_WorldInfo.Dimensions))
 		{
 			Elite::Vector2 cornerLocation = pInterface->NavMesh_GetClosestPathPoint(locationToExplore);
+			// TODO: remove
+			if (m_pScoutedVectors)
+			{
+				m_pScoutedVectors->push_back(Line{ agentPos, locationToExplore });
+			}
 
 			// The new position was far enough to assume there was an obstacle!
 			if (locationToExplore.Distance(cornerLocation) >= m_IgnoreLocationDistance)

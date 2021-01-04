@@ -155,7 +155,15 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	//		pInterface->PurgeZone_GetInfo(e, zoneInfo);
 	//		std::cout << "Purge Zone in FOV:" << e.Location.x << ", " << e.Location.y << " ---EntityHash: " << e.EntityHash << "---Radius: " << zoneInfo.Radius << std::endl;
 	//	}
-	//}					
+	//}		
+
+	for (Line& l : m_ScoutedVectors)
+	{
+		l.lifeTime -= dt;
+	}
+
+	m_ScoutedVectors.erase(std::remove_if(m_ScoutedVectors.begin(), m_ScoutedVectors.end(),
+		[](Line& l) { return l.lifeTime <= 0.f; }), m_ScoutedVectors.end());
 
 	return steering;
 }
@@ -168,10 +176,14 @@ void Agent::Render(IExamInterface* pExamInterface, float dt) const
 		pExamInterface->Draw_Circle(exploredLocation, .5f, Elite::Vector3{ 1.f,1.f,1.f });
 	}
 
+	// Debugging
 	if (m_DebugSeek)
 		pExamInterface->Draw_SolidCircle(m_pSeekBehavior->GetTarget(), .5f, Elite::Vector2{}, Elite::Vector3{ 1.f, 0.f, 0.f });
-
 	pExamInterface->Draw_Circle(Elite::Vector2{ 0.f,0.f }, 200.f, Elite::Vector3{ 0.f, 0.f, 1.f });
+	for (const Line& l : m_ScoutedVectors)
+	{
+		m_pInterface->Draw_Segment(l.pointA, l.pointB, {1.f,1.f,1.f});
+	}
 }
 
 // Controlling behaviors
@@ -552,6 +564,9 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("HouseLocations", &m_Houses);
 	m_pBlackboard->AddData("ItemLocations", &m_Items);
 	m_pBlackboard->AddData("AgentHouse", m_AgentHouse);
+
+	// Debug
+	m_pBlackboard->AddData("ScoutedVectors", &m_ScoutedVectors);
 }
 void Agent::InitializeBehaviors()
 {

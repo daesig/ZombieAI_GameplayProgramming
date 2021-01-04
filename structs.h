@@ -49,6 +49,13 @@ struct ExploredHouse
 	int itemsLootedSinceExplored;
 };
 
+struct Line
+{
+	Elite::Vector2 pointA{};
+	Elite::Vector2 pointB{};
+	float lifeTime{ 5.f };
+};
+
 enum class EvadeType
 {
 	SEEK,

@@ -93,6 +93,7 @@ private:
 	bool m_DebugSeek = false;
 	float m_DebugTimer{ 2.f };
 	float m_DebugTime{ 2.f };
+	std::vector<Line> m_ScoutedVectors{};
 
 	// Private functions
 	bool AddInventoryItem(const EntityInfo& item,bool& grabError);

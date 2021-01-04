@@ -205,12 +205,14 @@ private:
 
 	std::vector<ExploredHouse>* m_pHouseLocations = nullptr;
 	std::vector<Elite::Vector2>* m_pHouseCornerLocations = nullptr;
-	int m_PositionsToCheck{ 9 };
+	int m_PositionsToCheck{ 36 };
 	int m_Cycles{ 3 };
-	float m_OffcycleAngleOffset{ 33.f };
-	float m_DistanceFromAgent{ 50.f };
-	float m_DistanceIncreasePerCycle{ 25.f };
+	float m_OffcycleAngleOffset{ 5.f };
+	float m_DistanceFromAgent{ 25.f };
+	float m_DistanceIncreasePerCycle{ 45.f };
 	float m_IgnoreLocationDistance{ 5.f };
-
 	WorldInfo m_WorldInfo{};
+
+	// Debug
+	std::vector<Line>* m_pScoutedVectors = nullptr;
 };
