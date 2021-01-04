@@ -106,6 +106,10 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 			{
 				bool markActionForAdd = true;
 				std::cout << "new action: " << pPotentialAction->ToString() << " meets at least 1 condition\n";
+				if (pPotentialAction->ToString() == "GOAPSearchItem")
+				{
+					std::cout << "debug\n";
+				}
 
 				// Check if they try to satisfy the same property
 				int index{ 0 };
@@ -157,8 +161,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 								break;
 							}
 						}
-						// Else Both actions each cover different required effects
-						markActionForAdd = true;
 					}
 					++index;
 				}
