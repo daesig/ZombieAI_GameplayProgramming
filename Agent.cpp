@@ -204,7 +204,6 @@ void Agent::SetSeekPos(Elite::Vector2 seekPos)
 // Inventory
 bool Agent::GrabItem(EntityInfo& i, const eItemType& itemPriority, eItemType& grabbedType, IExamInterface* pInterface, bool& grabError)
 {
-
 	// Get info
 	ItemInfo itemInfo;
 	pInterface->Item_GetInfo(i, itemInfo);

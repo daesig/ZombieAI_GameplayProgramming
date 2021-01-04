@@ -72,6 +72,23 @@ inline bool utils::IsPointInHouse(const Elite::Vector2& point, const HouseInfo& 
 	return true;
 }
 
+bool utils::IsPointInCircle(const Elite::Vector2& point, const Elite::Vector2& circleCenter, float circleRadius)
+{
+	float distanceToCenterSquared = point.DistanceSquared(circleCenter);
+	return distanceToCenterSquared <= circleRadius* circleRadius;
+}
+
+bool utils::IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const std::vector<PurgeZoneInfo>& purgezones)
+{
+	bool isPointInPurgeZone{ false };
+	for (const PurgeZoneInfo& pzi : purgezones)
+	{
+		if (IsPointInCircle(point, pzi.Center, pzi.Radius))
+			isPointInPurgeZone = true;
+	}
+	return isPointInPurgeZone;
+}
+
 bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 {
 	bool requiresFood{ true };
@@ -85,8 +102,8 @@ bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 	if (!success)
 		std::cout << "Error reading vitals!\n";
 
-	bool needFood{false};
-	bool needHealth{false};
+	bool needFood{ false };
+	bool needHealth{ false };
 
 	if (requiresFood)
 	{

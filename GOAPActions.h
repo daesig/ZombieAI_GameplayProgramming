@@ -120,6 +120,7 @@ private:
 	float m_ArrivalRange = 3.5f;
 	float m_HouseExploreCooldown = 300.f;
 	Elite::Vector2 m_HouseGoalPos{};
+	std::vector<PurgeZoneInfo> m_PurgesZonesInSight{};
 
 	// testing
 	float m_IsDoneTime = 4.f;
