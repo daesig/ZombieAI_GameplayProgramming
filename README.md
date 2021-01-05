@@ -72,3 +72,8 @@ This is important because it means the agent may get stuck inside of 1 action if
 
 The FSM will repeatedly check for transitions and also transition back into the Idlestate once the action's IsDone() function returns true.
 This will make the FSM get the next action in the list and start performing this one. It will ask for a new plan once all actions have been completed.
+
+## Resources
+* [GOAP implementation F.E.A.R.](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi57eHroIXuAhUKqaQKHW7vA7wQFjABegQIAhAC&url=https%3A%2F%2Falumni.media.mit.edu%2F~jorkin%2Fgdc2006_orkin_jeff_fear.pdf&usg=AOvVaw1A6V7mt2imaclwaXyjy_vs)
+* [GOAP by Brent Owens](https://gamedevelopment.tutsplus.com/tutorials/goal-oriented-action-planning-for-a-smarter-ai--cms-20793)
+* [GOAP by Vedant Chaudhari](https://medium.com/@vedantchaudhari/goal-oriented-action-planning-34035ed40d0b)
