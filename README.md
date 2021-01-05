@@ -35,13 +35,13 @@ The purpose of the planner is to return a list of actions we need to perform in 
 
 ### GOAP-action
 We have aleady mentioned one GOAP-action called GOAPSurvive. Other examples of actions would be GOAPConsumeMedkit, GOAPSearchForMedkit...
-Actions require preconditions and effects. They also need to be able to perform and optionally if they require any movement. 
+Actions require preconditions and effects. They also need to be able to perform.
 
 GOAPConsume medkit would use a medkit in the Perform() function, apply it's effects to the worldstate with ApplyEffects() and let the Finite State Machine know that it's done with the IsDone() function.
 
 If an action like GOAPOpenDoor requires the agent to be next to the door, the RequiresMovement() function will return true and set a movement goal as long as the agent has not arrived. After arriving, the Perform() function can be called like mentioned above.
 
-It is also possible to implement a Plan() function which will check for anything dynamic in the world and return if it's able to perform or not. The GOAP-planner could then call this Plan() to find out which actions are able to run.
+It is also possible to implement a Plan() function which will check for anything dynamic in the world and return if it's able to perform or not. The GOAP-planner could then call this Plan() to find out which actions are able to run. Note that this may require a lot of resources and just checking for worldstates is less intensive.
 
 ### World states
 A world state can have all sorts of data. I only stored booleans for simplification in this project. It stores states like: HasEnoughHealth, HasMedkit, HasWeapon. States can be either true or false. 
@@ -56,7 +56,7 @@ The FSM will transition to the GoTostate as long as the action requires movement
 
 The Finite State Machine is being called upon every frame. This means that the Performstate will also get handled every single frame. The Performstate can last 1 frame or an infinite amount of frames depending on how long the Action needs to perform.
 
-This is important because it means the agent may get stuck inside of 1 action if the agent takes too long to perform. This is why the Performstate returns true or false. False means something out of the ordinary occured. The FSM will go back to idle and ask the GOAP-planner to plan a new set of actions.
+This is important because it means the agent may get stuck inside of 1 action if the agent takes too long to perform. This is why the Performstate returns true or false. False means something out of the ordinary occured. The FSM will go back to idle and ask the GOAP-planner to plan a new set of actions. One of the ways I solved this is by giving an action a certain timer. The action will return false once the timer is up and the GOAP-planner will recalculate it's course. This is to make the agent act more dynamic. 
 
 The FSM will repeatedly check for transitions and also transition back into the Idlestate once the action's IsDone() function returns true.
 This will make the FSM get the next action in the list and start performing this one. It will ask for a new plan once all actions have been completed.
