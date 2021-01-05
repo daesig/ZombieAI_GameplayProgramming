@@ -48,6 +48,8 @@ A world state can have all sorts of data. I only stored booleans for simplificat
 
 If the agent picks up a weapon, the state HasWeapon becomes true and the action with the precondition HasWeapon(true) is able to perform. When destroying the weapon, HasWeapon becomes false and the action cannot perform anymore.
 
+We can then simply use IsStateMet(key, value) to check if we have a state with those values.
+
 ### Finite State Machine
 An implementation of a FSM in for a GOAP usually consists of 3 states: Idlestate, GoTostate and the Performstate.
 The idle state asks the GOAP-planner for a new plan and transitions to either the GoTostate or the Performstate once an action has been found. The action in this case is the first action that requires handling in the queue given by the planner.
