@@ -2,7 +2,7 @@
 ## The project
 The project consists of a world with zombies, houses and items. The agent only knows what is in his current field of view and has to explore the world to survive. 
 Given: The world, zombies, items, inventory, navmesh and movement calculations (plugin.h, plugin.cpp)
-Requirements: Give back an Output_Steering struct that has: linearVelocity, angularVelocity, runMode (whether the agent should run and consume stamina to obtain more speed). 
+* Requirements: Give back an Output_Steering struct that has: linearVelocity, angularVelocity, runMode (whether the agent should run and consume stamina to obtain more speed). 
 * Goal of the project: Give the agent the desired steering actions to survive in this zombie infested world. 
 * Research: Goal Oriented Action Planner
 
