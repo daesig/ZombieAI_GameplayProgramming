@@ -6,6 +6,8 @@ Requirements: Give back an Output_Steering struct that has: linearVelocity, angu
 * Goal of the project: Give the agent the desired steering actions to survive in this zombie infested world. 
 * Research: Goal Oriented Action Planner
 
+![Gameplay example](https://raw.githubusercontent.com/daesig/ZombieAI_GameplayProgramming/master/ZombieAI.gif)
+
 ## What is a GOAP
 
 A Goal Oriented Action Planner (abbreviated GOAP) is a technique commonly used to make a plan of actions.
