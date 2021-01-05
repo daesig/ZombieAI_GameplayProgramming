@@ -35,9 +35,9 @@ For these examples we will compare a GOAP to a standalone FSM.
 A GOAP system consists of a GOAP-planner, GOAP-actions, worldstates and a Finite State Machine.
 
 ### GOAP-planner
-The GOAP-planner plans out a path towards a certain goal. The nodes that connect towards the goal are called the GOAP-actions. Each action has **preconditions** and **effects**. In this implementation, we start with a goal we want to fulfill called GOAPSurvive. To survive, the agent requires enough health and food and always wants to keep on moving. We can make 3 **preconditions** out of this: HasEnoughHealth, HasEnoughFood, HasMovementGoal
+The GOAP-planner plans out a path towards a certain goal. The nodes that connect towards the goal are called the GOAP-actions. Each action has **preconditions** and **effects**. In this implementation, we start with a goal we want to fulfil called GOAPSurvive. To survive, the agent requires enough health and food and always wants to keep on moving. We can make 3 **preconditions** out of this: HasEnoughHealth, HasEnoughFood, HasMovementGoal
 
-The planner will now look for actions that fillful these **preconditions** as **effects**. It's the planner's task to keep looking for **preconditions** and **effects** until all the **preconditions** have been satisfied. A good algorithm for this could be the AStar search algorithm. I started of with a base implementation of AStar and altered it to my needs.
+The planner will now look for actions that fulfil these **preconditions** as **effects**. It's the planner's task to keep looking for **preconditions** and **effects** until all the **preconditions** have been satisfied. A good algorithm for this could be the AStar search algorithm. I started of with a base implementation of AStar and altered it to my needs.
 
 The purpose of the planner is to return a list of actions we need to perform in a given order. This is where the FSM comes in.
 
