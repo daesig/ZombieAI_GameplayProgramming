@@ -52,6 +52,8 @@ If the agent picks up a weapon, the state HasWeapon becomes true and the action 
 An implementation of a FSM in for a GOAP usually consists of 3 states: Idlestate, GoTostate and the Performstate.
 The idle state asks the GOAP-planner for a new plan and transitions to either the GoTostate or the Performstate once an action has been found. The action in this case is the first action that requires handling in the queue given by the planner.
 
+[Finite State Machine](https://raw.githubusercontent.com/daesig/ZombieAI_GameplayProgramming/master/FSM.png)
+
 The FSM will transition to the GoTostate as long as the action requires movement, otherwise it goes to the Performstate. The FSM can also go back to the GoTostate from the Performstate in case sudden movement is required again. This project required too much custom implementation inside of the movement so most of the movement is handled inside of the actions. It still remains useleful if an action requires simple movement. 
 
 The Finite State Machine is being called upon every frame. This means that the Performstate will also get handled every single frame. The Performstate can last 1 frame or an infinite amount of frames depending on how long the Action needs to perform.
