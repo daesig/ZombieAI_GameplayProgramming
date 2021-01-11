@@ -93,7 +93,7 @@ void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 	utils::AddActionProperty(pM1, m_Preconditions, m_pWorldState, false);
 
 	GOAPProperty* pCondition = new GOAPProperty{ "FastScoutAllowed", false };
-	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, true);
 }
 void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner) {}
 
@@ -819,99 +819,18 @@ void GOAPSearchForMedkit::InitEffects(GOAPPlanner* pPlanner)
 	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
 }
 
-// TODO: Ask world information to see how far we can scout
-// Find general house locations action
-// Preconditions: InitialHouseScoutDone(false)
-// Effects: InitialHouseScoutDone(true)
-GOAPFindGeneralHouseLocationsAction::GOAPFindGeneralHouseLocationsAction(GOAPPlanner* pPlanner) :
-	GOAPAction(pPlanner, "GOAPFindGeneralHouseLocationsAction")
-{
-	m_Cost = 0.f;
-
-	InitPreConditions(pPlanner);
-	InitEffects(pPlanner);
-}
-void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPFindGeneralHouseLocationsAction\nScouting houses, this might take a while...\n",
-		DebugOutputManager::DebugType::GOAP_ACTION);
-	pBlackboard->AddData("HouseCornerLocations", &m_HouseCornerLocations);
-}
-bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
-{
-	while (m_Angle < 360.f && m_TimesLooped < m_Loops)
-	{
-		Elite::Vector2 locationToExplore{ cos(m_Angle) * m_ExploreVicinityRadius, sin(m_Angle) * m_ExploreVicinityRadius };
-		Elite::Vector2 cornerLocation = pInterface->NavMesh_GetClosestPathPoint(locationToExplore);
-
-		if (locationToExplore.Distance(cornerLocation) >= m_IgnoreLocationDistance)
-		{
-			bool exists = false;
-			auto foundIt = std::find(m_HouseCornerLocations.begin(), m_HouseCornerLocations.end(), cornerLocation);
-
-			// Check if this location was a new location
-			if (foundIt == m_HouseCornerLocations.end())
-			{
-				m_HouseCornerLocations.push_back(cornerLocation);
-			}
-		}
-
-		m_Angle += m_AngleIncrement;
-
-		if (m_Angle >= 359.99)
-		{
-			DebugOutputManager::GetInstance()->DebugLine("Iteration " + m_TimesLooped + std::to_string(1) + " of " + std::to_string(m_Loops) + "\n",
-				DebugOutputManager::DebugType::GOAP_ACTION);
-			++m_TimesLooped;
-			m_Angle = 0.f;
-			m_ExploreVicinityRadius += m_RangeIncrease;
-		}
-	}
-
-
-
-	return true;
-}
-bool GOAPFindGeneralHouseLocationsAction::CheckPreConditions(GOAPPlanner* pPlanner) const
-{
-	return false;
-}
-bool GOAPFindGeneralHouseLocationsAction::CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
-{
-	return false;
-}
-bool GOAPFindGeneralHouseLocationsAction::RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
-{
-	return false;
-}
-bool GOAPFindGeneralHouseLocationsAction::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
-{
-	ApplyEffects(pInterface, pPlanner, pBlackboard);
-	return true;
-}
-void GOAPFindGeneralHouseLocationsAction::InitPreConditions(GOAPPlanner* pPlanner)
-{
-	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", false };
-	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
-}
-void GOAPFindGeneralHouseLocationsAction::InitEffects(GOAPPlanner* pPlanner)
-{
-	GOAPProperty* pCondition = new GOAPProperty{ "InitialHouseScoutDone", true };
-	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
-}
-
 GOAPFastHouseScout::GOAPFastHouseScout(GOAPPlanner* pPlanner) :
 	GOAPAction(pPlanner, "GOAPFastHouseScout")
 {
 	InitPreConditions(pPlanner);
 	InitEffects(pPlanner);
-	m_Cost = -1.f;
+	m_Cost = -100.f;
 }
 void GOAPFastHouseScout::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPFastHouseScout\n",
 		DebugOutputManager::DebugType::GOAP_ACTION);
-	// Setup behavior to an item search behavior with priority for energy
+
 	bool dataValid = pBlackboard->GetData("HouseLocations", m_pHouseLocations) && pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations);
 	if (!dataValid)
 	{
@@ -939,6 +858,8 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 	float angleIncrement = 360.f / positionsPerCycle;
 	float angle{ 0.f };
 
+	int housesFound{ 0 };
+
 	const Elite::Vector2& agentPos = pInterface->Agent_GetInfo().Position;
 
 	while (positionsChecked < positionsPerCycle)
@@ -950,7 +871,8 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 		if (utils::IsPointInRect(locationToExplore, m_WorldInfo.Center, m_WorldInfo.Dimensions))
 		{
 			Elite::Vector2 cornerLocation = pInterface->NavMesh_GetClosestPathPoint(locationToExplore);
-			// TODO: remove
+
+			// For debugging
 			if (m_pScoutedVectors)
 			{
 				m_pScoutedVectors->push_back(Line{ agentPos, locationToExplore });
@@ -971,8 +893,8 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 
 				if (!houseFound)
 				{
-					DebugOutputManager::GetInstance()->DebugLine("Found a new unexplored house!\n",
-						DebugOutputManager::DebugType::GOAP_ACTION);
+					++housesFound;
+
 					m_pHouseCornerLocations->push_back(cornerLocation);
 				}
 			}
@@ -994,6 +916,12 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 		angle += angleIncrement;
 	}
 
+	if (housesFound > 0)
+	{
+		DebugOutputManager::GetInstance()->DebugLine("Found " + std::to_string(housesFound) + " unexplored houses!\n",
+			DebugOutputManager::DebugType::GOAP_ACTION);
+	}
+
 	return true;
 }
 bool GOAPFastHouseScout::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const
@@ -1004,10 +932,13 @@ bool GOAPFastHouseScout::IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanne
 void GOAPFastHouseScout::InitPreConditions(GOAPPlanner* pPlanner)
 {
 	GOAPProperty* pCondition = new GOAPProperty{ "FastScoutAllowed", true };
-	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
+	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, true);
 }
 void GOAPFastHouseScout::InitEffects(GOAPPlanner* pPlanner)
 {
 	GOAPProperty* pCondition = new GOAPProperty{ "FastScoutAllowed", false };
-	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, false);
+	utils::AddActionProperty(pCondition, m_Effects, m_pWorldState, true);
+
+	GOAPProperty* pCondition2 = new GOAPProperty{ "InitialHouseScoutDone", true };
+	utils::AddActionProperty(pCondition2, m_Effects, m_pWorldState, false);
 }

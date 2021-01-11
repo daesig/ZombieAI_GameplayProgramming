@@ -166,35 +166,6 @@ private:
 	virtual void InitEffects(GOAPPlanner* pPlanner);
 };
 
-class GOAPFindGeneralHouseLocationsAction final : public GOAPAction
-{
-public:
-	GOAPFindGeneralHouseLocationsAction(GOAPPlanner* pPlanner);
-	virtual void Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-	virtual bool Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt) override;
-
-	virtual bool RequiresMovement(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
-	virtual bool IsDone(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) const override;
-private:
-	float m_ExploreVicinityRadius{ 50.f };
-	float m_ExploreActionRange{ 5.f };
-	float m_MovementFulfilledRange{ 3.f };
-
-	int m_Loops{ 3 };
-	int m_TimesLooped{ 0 };
-	float m_RangeIncrease{ 50.f };
-	float m_Angle{ 0.f }, m_AngleIncrement{ 10.f };
-	float m_IgnoreLocationDistance{ 5.f };
-	std::vector<Elite::Vector2> m_HouseCornerLocations{};
-
-	virtual void InitPreConditions(GOAPPlanner* pPlanner) override;
-	virtual void InitEffects(GOAPPlanner* pPlanner) override;
-
-	virtual bool CheckPreConditions(GOAPPlanner* pPlanner) const override;
-	virtual bool CheckProceduralPreconditions(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard) override;
-};
-
-// TODO: merge with GOAPFindGeneralHouseLocationsAction
 class GOAPFastHouseScout final : public GOAPAction
 {
 public:

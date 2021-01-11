@@ -532,6 +532,7 @@ void Agent::InitializeBlackboard()
 	m_pBlackboard->AddData("ItemLocations", &m_Items);
 	m_pBlackboard->AddData("AgentHouse", m_AgentHouse);
 	m_pBlackboard->AddData("AgentInPurgeZone", false);
+	m_pBlackboard->AddData("HouseCornerLocations", &m_HouseCornerLocations);
 
 	// Debug
 	m_pBlackboard->AddData("ScoutedVectors", &m_ScoutedVectors);
@@ -549,14 +550,12 @@ void Agent::InitializeGOAP()
 	m_pGOAPPlanner = new GOAPPlanner(m_pWorldState);
 
 	// GOAP Actions
-	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);
 	GOAPAction* pGOAPConsumeFood = new GOAPConsumeFood(m_pGOAPPlanner);
 	GOAPAction* pGOAPConsumeMedkit = new GOAPConsumeMedkit(m_pGOAPPlanner);
 	GOAPAction* pGOAPSearchForFood = new GOAPSearchForFood(m_pGOAPPlanner);
 	GOAPAction* pGOAPSearchForMedkit = new GOAPSearchForMedkit(m_pGOAPPlanner);
 	GOAPAction* pSearchItem = new GOAPSearchItem(m_pGOAPPlanner);
 	GOAPAction* pFastScout = new GOAPFastHouseScout(m_pGOAPPlanner);
-	m_pActions.push_back(pGOAPFindGeneralHouseLocationsAction);
 	m_pActions.push_back(pGOAPConsumeFood);
 	m_pActions.push_back(pGOAPConsumeMedkit);
 	m_pActions.push_back(pGOAPSearchForFood);

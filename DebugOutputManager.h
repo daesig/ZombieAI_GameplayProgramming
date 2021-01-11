@@ -45,15 +45,15 @@ private:
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Debug bools
-	bool m_DebuggingAllowed = false;
+	bool m_DebuggingAllowed = true;
 
-	bool m_DebugFSMState = true;
+	bool m_DebugFSMState = false;
 	bool m_DebugGOAPPlanner = false;
 	bool m_DebugGOAPAction = true;
 	bool m_DebugSearchAlgorithm = false;
 	bool m_DebugInventory = false;
 	bool m_DebugSteering = false;
-	bool m_DebugWorldState = true;
+	bool m_DebugWorldState = false;
 	bool m_DebugProblem = true;
 };
 

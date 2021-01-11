@@ -64,6 +64,7 @@ private:
 
 	// Exploration
 	std::vector<ExploredHouse> m_Houses{};
+	std::vector<Elite::Vector2> m_HouseCornerLocations{};
 	ExploredHouse* m_AgentHouse = nullptr;
 	std::list<EntityInfo> m_Items{};
 	Elite::Vector2 m_GoalPosition{ 0.f,0.f };

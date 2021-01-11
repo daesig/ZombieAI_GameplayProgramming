@@ -22,8 +22,8 @@ public:
 private:
 	ConfigManager() = default;
 
-	bool m_DebugHouseScoutVectors = false;
-	bool m_DebugHouseCornerLocations = false;
+	bool m_DebugHouseScoutVectors = true;
+	bool m_DebugHouseCornerLocations = true;
 	bool m_DebugLastEnemyLocation = false;
 	bool m_DebugSteering = false;
 	bool m_DebugGoalPosition = false;
