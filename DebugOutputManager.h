@@ -13,6 +13,7 @@ public:
 		GOAP_ACTION,
 		SEARCH_ALGORITHM,
 		INVENTORY,
+		STEERING,
 		PROBLEM
 	};
 
@@ -45,10 +46,11 @@ private:
 	// Debug bools
 	bool m_DebuggingAllowed = true;
 	bool m_DebugFSMState = true;
-	bool m_DebugGOAPPlanner = true;
+	bool m_DebugGOAPPlanner = false;
 	bool m_DebugGOAPAction = true;
 	bool m_DebugSearchAlgorithm = false;
 	bool m_DebugInventory = false;
+	bool m_DebugSteering = false;
 	bool m_DebugProblem = true;
 };
 

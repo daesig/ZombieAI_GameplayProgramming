@@ -394,7 +394,6 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 			bool itemPickedUp = m_pAgent->GrabItem(i, pInterface);
 			if (itemPickedUp)
 			{
-				std::cout << "grabbed item: " << i.EntityHash << "\n";
 				grabbedItems.push_back(&i);
 				requiresNewSeekPos = true;
 				m_ItemLootedPosition = i.Location;

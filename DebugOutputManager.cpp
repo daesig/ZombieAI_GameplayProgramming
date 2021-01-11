@@ -44,6 +44,10 @@ void DebugOutputManager::DebugLine(const std::string& line, DebugType debugType)
 		debug = m_DebugInventory;
 		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		break;
+	case DebugType::STEERING:
+		debug = m_DebugSteering;
+		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
+		break;
 	default:
 		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		debug = true;

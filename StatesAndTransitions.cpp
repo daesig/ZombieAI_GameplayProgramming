@@ -75,7 +75,6 @@ void IdleState::ResetIdleState()
 void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
 	// Debug announcement
-	//std::cout << "Entered GoToState\n";
 	// Setup the action
 	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
 
@@ -139,7 +138,6 @@ void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 // Perform state: public FSMState
 void PerformState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	//std::cout << "Entered PerformState\n";
 	// Setup the action
 	pPlanner->GetAction()->Setup(pInterface, pPlanner, pBlackboard);
 }

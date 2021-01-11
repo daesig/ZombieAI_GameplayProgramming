@@ -93,7 +93,8 @@ bool utils::IsLocationInsideGivenPurgezones(const Elite::Vector2& point, const s
 	bool isPointInPurgeZone{ false };
 	for (const SpottedPurgeZone& pzi : purgezones)
 	{
-		if (IsPointInCircle(point, pzi.purgezoneInfo.Center, pzi.purgezoneInfo.Radius)) {
+		if (IsPointInCircle(point, pzi.purgezoneInfo.Center, pzi.purgezoneInfo.Radius))
+		{
 			purgezone = pzi;
 			isPointInPurgeZone = true;
 		}
@@ -112,7 +113,7 @@ bool utils::VitalStatisticsAreOk(WorldState* pWorldState)
 		&& pWorldState->GetState("HasFood", hasFood) && pWorldState->GetState("HasMedkit", hasMedkit);
 
 	if (!success)
-		std::cout << "Error reading vitals!\n";
+		DebugOutputManager::GetInstance()->DebugLine("Error reading vitals!\n", DebugOutputManager::DebugType::PROBLEM);
 
 	bool needFood{ false };
 	bool needHealth{ false };

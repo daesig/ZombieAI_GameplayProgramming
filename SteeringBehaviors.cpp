@@ -50,7 +50,8 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	// Recalculate goal pos due to all the navmesh bugs
 	if (m_NavMeshRefreshTimer > m_NavMeshRefreshTime)
 	{
-		std::cout << "Asking new route towards goal...\n";
+		DebugOutputManager::GetInstance()->DebugLine("Asking new route towards goal...\n",
+			DebugOutputManager::DebugType::STEERING);
 		pAgent->SetGoalPosition(pInterface->NavMesh_GetClosestPathPoint(pAgent->GetDistantGoalPosition()));
 		m_NavMeshRefreshTimer = 0.f;
 	}
@@ -59,7 +60,8 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	bool enemyInSight = false;
 	if (!pWorldState->GetState("EnemyInSight", enemyInSight))
 	{
-		std::cout << "Failed to get worldstate\n";
+		DebugOutputManager::GetInstance()->DebugLine("Failed to get worldstate\n",
+			DebugOutputManager::DebugType::PROBLEM);
 	}
 
 	// Get the position that the agent wants to go in
@@ -125,7 +127,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 	if (pAgent->WasBitten())
 	{
-		std::cout << "BITTEN\n";
 		steering.RunMode = true;
 	}
 
@@ -156,21 +157,6 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 			float sign = angleFromAgentToGoal / abs(angleFromAgentToGoal);
 			steering.AngularVelocity = agentInfo.MaxAngularSpeed * sign;
 		}
-
-
-
-		//if (angleFromAgentToGoal > .1f)
-		//{
-		//	steering.AngularVelocity = agentInfo.MaxAngularSpeed;
-		//}
-		//else if (angleFromAgentToGoal < -.1f)
-		//{
-		//	steering.AngularVelocity = -agentInfo.MaxAngularSpeed;
-		//}
-		//else
-		//{
-		//	//steering.AutoOrient = true;
-		//}
 	}
 	else
 	{
@@ -241,15 +227,6 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 			}
 		}
 	}
-
-	//auto vEntitiesInFOV = utils::GetEntitiesInFOV(pInterface);
-	//for (EntityInfo& entityInfo : vEntitiesInFOV)
-	//{
-	//	if (entityInfo.Type == eEntityType::ENEMY)
-	//	{
-	//		if(entityInfo.Location)
-	//	}
-	//}
 
 	return steering;
 }

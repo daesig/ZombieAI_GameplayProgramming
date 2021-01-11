@@ -25,6 +25,9 @@ Agent::~Agent()
 	DeleteBehaviors();
 	DeleteBlackboard();
 	DeleteWorldState();
+
+	DebugOutputManager::GetInstance()->DebugLine("Deconstructed agent\n\n\n",
+		DebugOutputManager::DebugType::DESTRUCTION);
 }
 
 // Update
@@ -517,7 +520,8 @@ void Agent::Initialize()
 	// FSM
 	InitializeFSM();
 
-	std::cout << "Initialized\n\n\n";
+	DebugOutputManager::GetInstance()->DebugLine("Initialized agent\n\n\n",
+		DebugOutputManager::DebugType::CONSTRUCTION);
 }
 void Agent::InitializeWorldState()
 {
