@@ -620,11 +620,13 @@ void Agent::DeleteFSM()
 		delete pState;
 		pState = nullptr;
 	}
+	m_pStates.clear();
 	for (FSMTransition* pTransition : m_pTransitions)
 	{
 		delete pTransition;
 		pTransition = nullptr;
 	}
+	m_pTransitions.clear();
 
 	delete m_pFiniteStateMachine;
 	m_pFiniteStateMachine = nullptr;
@@ -640,6 +642,7 @@ void Agent::DeleteGOAP()
 		delete pAction;
 		pAction = nullptr;
 	}
+	m_pActions.clear();
 }
 void Agent::DeleteBehaviors()
 {
@@ -649,6 +652,8 @@ void Agent::DeleteBehaviors()
 	m_pSeekDodgeBehavior = nullptr;
 	delete m_pKillBehavior;
 	m_pKillBehavior = nullptr;
+
+	m_pSteeringBehavior = nullptr;
 }
 void Agent::DeleteBlackboard()
 {

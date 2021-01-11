@@ -45,7 +45,8 @@ private:
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Debug bools
-	bool m_DebuggingAllowed = true;
+	bool m_DebuggingAllowed = false;
+
 	bool m_DebugFSMState = true;
 	bool m_DebugGOAPPlanner = false;
 	bool m_DebugGOAPAction = true;
