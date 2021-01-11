@@ -16,6 +16,9 @@ GOAPPlanner::~GOAPPlanner()
 {
 	delete m_pGoalAction;
 	m_pGoalAction = nullptr;
+
+	delete m_pSearchAlgorithm;
+	m_pSearchAlgorithm = nullptr;
 }
 
 bool GOAPPlanner::PlanAction()

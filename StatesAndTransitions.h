@@ -1,4 +1,9 @@
 #pragma once
+/*=============================================================================*/
+// Copyright 2020-2021 Elite Engine
+/*=============================================================================*/
+// StatesAndTransitions.h: Implementation of the state/transition classes
+/*=============================================================================*/
 
 #include "SteeringBehaviors.h"
 #include "Blackboard.h"

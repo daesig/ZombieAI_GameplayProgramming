@@ -35,7 +35,6 @@ public:
 protected:
 	Elite::Vector2 m_Target;
 };
-#pragma endregion
 
 //SEEK
 class Seek : public ISteeringBehavior
@@ -81,7 +80,6 @@ private:
 	float m_NavMeshRefreshTimer{ 1.f };
 };
 
-//WANDER
 class Wander : public ISteeringBehavior
 {
 public:
