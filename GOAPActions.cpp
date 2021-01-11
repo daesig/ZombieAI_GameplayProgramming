@@ -13,7 +13,8 @@ GOAPAction::GOAPAction(GOAPPlanner* pPlanner, const std::string& effectName) :
 	m_EffectName{ effectName }
 {
 	m_pWorldState = pPlanner->GetWorldState();
-	std::cout << "Constructed action: " << m_EffectName << "\n";
+	DebugOutputManager::GetInstance()->DebugLine("Constructed action: " + m_EffectName + "\n",
+		DebugOutputManager::DebugType::CONSTRUCTION);
 }
 GOAPAction::~GOAPAction()
 {
@@ -70,7 +71,8 @@ bool GOAPSurvive::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 }
 void GOAPSurvive::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPSurvive\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPSurvive\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 }
 void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 {
@@ -91,13 +93,6 @@ void GOAPSurvive::InitPreConditions(GOAPPlanner* pPlanner)
 
 	GOAPProperty* pCondition = new GOAPProperty{ "FastScoutAllowed", false };
 	utils::AddActionProperty(pCondition, m_Preconditions, m_pWorldState, false);
-
-	// If the agent has fullfilled above preconditions
-	//GOAPProperty* pKillCondition = new GOAPProperty{ "AttemptKill", true };
-	//utils::AddActionProperty(pKillCondition, m_Preconditions, m_pWorldState, true);
-
-	//GOAPProperty* pTestCondition = new GOAPProperty{ "SurviveTest", true };
-	//utils::AddActionProperty(pTestCondition, m_Preconditions, m_pWorldState, false);
 }
 void GOAPSurvive::InitEffects(GOAPPlanner* pPlanner) {}
 
@@ -113,7 +108,8 @@ GOAPConsumeFood::GOAPConsumeFood(GOAPPlanner* pPlanner) :
 }
 void GOAPConsumeFood::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPDrinkEnergy\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPDrinkEnergy\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 	m_Consumed = false;
 }
 bool GOAPConsumeFood::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
@@ -200,7 +196,8 @@ GOAPConsumeMedkit::GOAPConsumeMedkit(GOAPPlanner* pPlanner) :
 }
 void GOAPConsumeMedkit::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPConsumeMedkit\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPConsumeMedkit\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 	m_Consumed = false;
 }
 bool GOAPConsumeMedkit::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
@@ -290,7 +287,8 @@ bool GOAPSearchItem::Plan(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bla
 }
 void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPSearchItem\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPSearchItem\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 	// Setup behavior to an item search behavior with priority for energy
 	bool dataValid = pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations)
 		&& pBlackboard->GetData("HouseLocations", m_pHouseLocations)
@@ -299,7 +297,8 @@ void GOAPSearchItem::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Bl
 
 	if (!dataValid)
 	{
-		std::cout << "Error obtaining blackboard data in GOAPSearchItem::Setup\n";
+		DebugOutputManager::GetInstance()->DebugLine("Error obtaining blackboard data in GOAPSearchItem::Setup\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
@@ -353,7 +352,8 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 				// New item found! Add the item to the array
 				if (foundIt == m_pItemsOnGround->end())
 				{
-					std::cout << "Item found!\n";
+					DebugOutputManager::GetInstance()->DebugLine("Item found!\n",
+						DebugOutputManager::DebugType::GOAP_ACTION);
 					m_pItemsOnGround->push_back(entity);
 					requiresNewSeekPos = true;
 				}
@@ -421,14 +421,6 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 					return false;
 				}
 			), m_pItemsOnGround->end());
-
-			if (m_pItemsOnGround->size() == startSize)
-			{
-				while (true)
-				{
-					std::cout << "PROBLEM purposely went into infinte loop for testing!!!!\n";
-				}
-			}
 		}
 	}
 
@@ -549,12 +541,14 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 			// Check if we found a nearby item and set the destination
 			if (pClosestItem)
 			{
-				std::cout << "closest item found\n";
+				DebugOutputManager::GetInstance()->DebugLine("closest item found\n",
+					DebugOutputManager::DebugType::GOAP_ACTION);
 				m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
 				destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
 			}
 			else
-				std::cout << "Error finding path to house\n";
+				DebugOutputManager::GetInstance()->DebugLine("Error finding path to house\n",
+					DebugOutputManager::DebugType::PROBLEM);
 		}
 	}
 
@@ -597,7 +591,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 				destination = pInterface->NavMesh_GetClosestPathPoint(m_HouseGoalPos);
 			}
 			else
-				std::cout << "Error finding path to house\n";
+				DebugOutputManager::GetInstance()->DebugLine("Error finding path to house\n",
+					DebugOutputManager::DebugType::PROBLEM);
 		}
 	}
 
@@ -607,7 +602,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		{
 			m_pAgent->SetDistantGoalPosition(pClosestItem->Location);
 			destination = pInterface->NavMesh_GetClosestPathPoint(pClosestItem->Location);
-			std::cout << "Closest item found and its closer than the house\n";
+			DebugOutputManager::GetInstance()->DebugLine("Closest item found and its closer than the house\n",
+				DebugOutputManager::DebugType::GOAP_ACTION);
 		}
 		foundPath = true;
 	}
@@ -617,7 +613,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		if (!utils::IsLocationInsideGivenPurgezones(pClosestHouse->houseInfo.Center, m_PurgesZonesInSight, pz))
 		{
 			m_pAgent->SetDistantGoalPosition(pClosestHouse->houseInfo.Center);
-			std::cout << "ClosestHouse chosen\n";
+			DebugOutputManager::GetInstance()->DebugLine("ClosestHouse chosen\n",
+				DebugOutputManager::DebugType::GOAP_ACTION);
 			foundPath = true;
 		}
 	}
@@ -657,7 +654,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 		{
 			// No more corners to discover
 			// All explored houses are unavailable
-			std::cout << "no more corners\n";
+			DebugOutputManager::GetInstance()->DebugLine("No more corners\n",
+				DebugOutputManager::DebugType::GOAP_ACTION);
 			int randomhouse = Elite::randomInt(m_pHouseLocations->size());
 			ExploredHouse& randomHouse = m_pHouseLocations->at(randomhouse);
 			randomHouse.itemsLootedSinceExplored = 999;
@@ -666,7 +664,8 @@ void GOAPSearchItem::ChooseSeekLocation(IExamInterface* pInterface, GOAPPlanner*
 
 	// Log error message
 	if (!foundPath)
-		std::cout << "No path found in GOAPSearchItem::ChooseSeekLocation!\n";
+		DebugOutputManager::GetInstance()->DebugLine("No path found in GOAPSearchItem::ChooseSeekLocation!\n",
+			DebugOutputManager::DebugType::PROBLEM);
 
 	// Set agent destination
 	m_pAgent->SetGoalPosition(destination);
@@ -829,8 +828,8 @@ GOAPFindGeneralHouseLocationsAction::GOAPFindGeneralHouseLocationsAction(GOAPPla
 }
 void GOAPFindGeneralHouseLocationsAction::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPFindGeneralHouseLocationsAction\n";
-	std::cout << "Scouting houses, this might take a while...\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPFindGeneralHouseLocationsAction\nScouting houses, this might take a while...\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 	pBlackboard->AddData("HouseCornerLocations", &m_HouseCornerLocations);
 }
 bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard, float dt)
@@ -856,7 +855,8 @@ bool GOAPFindGeneralHouseLocationsAction::Perform(IExamInterface* pInterface, GO
 
 		if (m_Angle >= 359.99)
 		{
-			std::cout << "Iteration " << m_TimesLooped + 1 << " of " << m_Loops << "\n";
+			DebugOutputManager::GetInstance()->DebugLine("Iteration " + m_TimesLooped + std::to_string(1) + " of " + std::to_string(m_Loops) + "\n",
+				DebugOutputManager::DebugType::GOAP_ACTION);
 			++m_TimesLooped;
 			m_Angle = 0.f;
 			m_ExploreVicinityRadius += m_RangeIncrease;
@@ -904,12 +904,14 @@ GOAPFastHouseScout::GOAPFastHouseScout(GOAPPlanner* pPlanner) :
 }
 void GOAPFastHouseScout::Setup(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 {
-	std::cout << "Setting up GOAPFastHouseScout\n";
+	DebugOutputManager::GetInstance()->DebugLine("Setting up GOAPFastHouseScout\n",
+		DebugOutputManager::DebugType::GOAP_ACTION);
 	// Setup behavior to an item search behavior with priority for energy
 	bool dataValid = pBlackboard->GetData("HouseLocations", m_pHouseLocations) && pBlackboard->GetData("HouseCornerLocations", m_pHouseCornerLocations);
 	if (!dataValid)
 	{
-		std::cout << "Error obtaining blackboard data in GOAPFastHouseScout::Setup\n";
+		DebugOutputManager::GetInstance()->DebugLine("Error obtaining blackboard data in GOAPFastHouseScout::Setup\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
@@ -964,7 +966,8 @@ bool GOAPFastHouseScout::Perform(IExamInterface* pInterface, GOAPPlanner* pPlann
 
 				if (!houseFound)
 				{
-					std::cout << "Found a new unexplored house!\n";
+					DebugOutputManager::GetInstance()->DebugLine("Found a new unexplored house!\n",
+						DebugOutputManager::DebugType::GOAP_ACTION);
 					m_pHouseCornerLocations->push_back(cornerLocation);
 				}
 			}

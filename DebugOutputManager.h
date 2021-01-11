@@ -6,8 +6,11 @@ class DebugOutputManager
 public:
 	enum class DebugType
 	{
+		CONSTRUCTION,
+		DESTRUCTION,
 		FSM_STATE,
 		GOAP_PLANNER,
+		GOAP_ACTION,
 		SEARCH_ALGORITHM,
 		INVENTORY,
 		PROBLEM
@@ -43,6 +46,7 @@ private:
 	bool m_DebuggingAllowed = true;
 	bool m_DebugFSMState = true;
 	bool m_DebugGOAPPlanner = true;
+	bool m_DebugGOAPAction = true;
 	bool m_DebugSearchAlgorithm = false;
 	bool m_DebugInventory = false;
 	bool m_DebugProblem = true;
