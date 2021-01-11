@@ -2,6 +2,7 @@
 #include "StatesAndTransitions.h"
 #include "Agent.h"
 #include "GOAPPlanner.h"
+#include "DebugOutputManager.h"
 
 // STATES
 // ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -10,17 +11,12 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 {
 	ResetIdleState();
 
-	// Setup debug
-	if (m_pDebugFSMStates == nullptr)
-	{
-		pBlackboard->GetData("DebugFSMStates", m_pDebugFSMStates);
-	}
-
 	// The last action encountered a problem with fullfilling it's effects. Replan!
 	if (pPlanner->GetEncounteredProblem() == true)
 	{
-		if (*m_pDebugFSMStates)
-			std::cout << "Action encountered a problem\n";
+		DebugOutputManager::GetInstance()->DebugLine("Action encountered a problem\n",
+			DebugOutputManager::DebugType::FSM_STATE);
+
 		pPlanner->SetEncounteredProblem(false);
 		m_ActionTimer = m_RefreshActionTime + 1.f;
 		m_ReplanActions = true;
@@ -36,8 +32,9 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 		{
 			// Next action exists
 			m_HasNext = true;
-			if (*m_pDebugFSMStates)
-				std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
+
+			DebugOutputManager::GetInstance()->DebugLine("Next action chosen, currentAction: " + pPlanner->GetAction()->ToString() + "\n",
+				DebugOutputManager::DebugType::FSM_STATE);
 		}
 	}
 }
@@ -50,7 +47,9 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 	// Only plan actions every x seconds
 	if (m_ActionTimer > m_RefreshActionTime)
 	{
-		std::cout << "Searching for possible actions...\n";
+		DebugOutputManager::GetInstance()->DebugLine("Searching for possible actions...\n",
+			DebugOutputManager::DebugType::FSM_STATE);
+
 		// Reset action timer
 		m_ActionTimer = 0.f;
 
@@ -58,7 +57,8 @@ void IdleState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 		bool plannedAction = pPlanner->PlanAction();
 		if (plannedAction)
 		{
-			std::cout << "Planned actions, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
+			DebugOutputManager::GetInstance()->DebugLine("Planned actions, currentAction: " + pPlanner->GetAction()->ToString() + "\n",
+				DebugOutputManager::DebugType::FSM_STATE);
 		}
 	}
 	else
@@ -87,7 +87,8 @@ void GoToState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 	bool foundData = pBlackboard->GetData("Agent", pAgent);
 	if (!foundData)
 	{
-		std::cout << "GoToState::OnEnter, problem fetching data from blackboard\n";
+		DebugOutputManager::GetInstance()->DebugLine("GoToState::OnEnter, problem fetching data from blackboard\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
@@ -101,7 +102,8 @@ void GoToState::OnExit(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 	bool foundData = pBlackboard->GetData("Agent", pAgent);
 	if (!foundData)
 	{
-		std::cout << "GoToState::OnExit, problem fetching data from blackboard\n";
+		DebugOutputManager::GetInstance()->DebugLine("GoToState::OnExit, problem fetching data from blackboard\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
@@ -114,7 +116,8 @@ void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 	bool foundData = pBlackboard->GetData("Agent", pAgent);
 	if (!foundData)
 	{
-		std::cout << "GoToState::Update, problem fetching data from blackboard\n";
+		DebugOutputManager::GetInstance()->DebugLine("GoToState::Update, problem fetching data from blackboard\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
@@ -205,7 +208,8 @@ bool PerformedTransition::ToTransition(IExamInterface* pInterface, GOAPPlanner* 
 	// Keep doing the action until it is done
 	if (pAction->IsDone(pInterface, pPlanner, pBlackboard))
 	{
-		std::cout << "Action performed\n\n";
+		DebugOutputManager::GetInstance()->DebugLine("Action performed\n\n",
+			DebugOutputManager::DebugType::FSM_STATE);
 		return true;
 	}
 

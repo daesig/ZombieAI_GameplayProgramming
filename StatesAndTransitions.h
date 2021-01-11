@@ -23,8 +23,6 @@ private:
 	bool m_HasNext = false;
 	bool m_ReplanActions = false;
 
-	bool* m_pDebugFSMStates = nullptr;
-
 	void ResetIdleState();
 };
 

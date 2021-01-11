@@ -539,7 +539,6 @@ void Agent::InitializeBlackboard()
 
 	// Debug
 	m_pBlackboard->AddData("ScoutedVectors", &m_ScoutedVectors);
-	m_pBlackboard->AddData("DebugFSMStates", &m_DebugFSMStates);
 	m_pBlackboard->AddData("DebugNavMeshExploration", &m_DebugNavMeshExploration);
 }
 void Agent::InitializeBehaviors()

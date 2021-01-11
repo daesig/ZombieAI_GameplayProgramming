@@ -9,6 +9,7 @@
 #include "stdafx.h"
 #include "FSMState.h"
 #include "IExamInterface.h"
+#include "DebugOutputManager.h"
 
 FiniteStateMachine::FiniteStateMachine(FSMState* startState, IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackboard* pBlackboard)
 	: m_pCurrentState(nullptr),
@@ -61,7 +62,9 @@ void FiniteStateMachine::SetState(IExamInterface* pInterface, GOAPPlanner* pPlan
 	m_pCurrentState = newState;
 	if (m_pCurrentState)
 	{
-		std::cout << "Entering state: " << typeid(*m_pCurrentState).name() << std::endl;
+		std::string stateClassName = typeid(*m_pCurrentState).name();
+		DebugOutputManager::GetInstance()->DebugLine("Entering state: " + stateClassName + "\n",
+			DebugOutputManager::DebugType::FSM_STATE);
 		m_pCurrentState->OnEnter(pInterface, pPlanner, m_pBlackboard);
 	}
 }
