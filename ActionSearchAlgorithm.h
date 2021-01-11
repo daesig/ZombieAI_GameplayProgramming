@@ -12,8 +12,6 @@ public:
 private:
 	WorldState* m_pWorldState = nullptr;
 
-	float GetHeuristicCost(GOAPAction* pAction);
-
 	// Debugging
 	bool* m_pDebugGOAPPlanner = nullptr;
 };

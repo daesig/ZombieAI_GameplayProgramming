@@ -24,7 +24,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 	currentRecord.pAction = pGoalAction;
 	//currentRecord.pConnectedNode = nullptr;
 	currentRecord.costSoFar = 0.f;
-	currentRecord.estimatedTotalCost = GetHeuristicCost(pGoalAction);
 	openlist.push_back(currentRecord);
 
 	// Loop through the open list
@@ -217,7 +216,6 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 						nr.pAction = pAction;
 						//nr.pConnectedNode = currentRecord;
 						nr.costSoFar = currentRecord.costSoFar + pAction->GetCost();
-						nr.estimatedTotalCost = GetHeuristicCost(pAction);
 						openlist.push_back(nr);
 						if (*m_pDebugGOAPPlanner)
 							std::cout << "Added to openlist: " << pAction->ToString() << "\n";
@@ -255,43 +253,4 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 		std::cout << "Actions planned!\n";
 
 	return actionQueue;
-}
-
-float ActionSearchAlgorithm::GetHeuristicCost(GOAPAction* pAction)
-{
-	return 1.f;
-	//float heuristicCost = 0.f;
-	//bool hasPreviousAction = true;
-	//GOAPAction* pCurrentAction = pAction;
-
-	//std::queue<GOAPProperty*> pConditionsToCheck{};
-	//for (auto precon : pCurrentAction->GetPreconditions())
-	//{
-	//	pConditionsToCheck.push(precon);
-	//}
-
-	//// As long the current action has pre conditions that have to be fulfilled
-	//while (!pConditionsToCheck.empty())
-	//{
-	//	hasPreviousAction = false;
-	//	heuristicCost += 1.f;
-	//	for (GOAPAction* pAction : m_pActions)
-	//	{
-	//		// Get the next condition in the queue
-	//		GOAPProperty* pCurrentProperty = pConditionsToCheck.front();
-
-	//		// Go through the child actions and check all the conditions that it has to fullfil, add them to the queue
-	//		if (pAction->HasEffect(pCurrentProperty))
-	//		{
-	//			// As long as we find more conditions, add them to the list
-	//			for (auto precon : pCurrentAction->GetPreconditions())
-	//			{
-	//				pConditionsToCheck.push(precon);
-	//			}
-	//		}
-	//	}
-	//	pConditionsToCheck.pop();
-	//}
-
-	//return heuristicCost;
 }

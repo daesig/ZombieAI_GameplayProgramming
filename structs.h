@@ -27,19 +27,12 @@ struct NodeRecord
 	GOAPAction* pAction;
 	NodeRecord* pConnectedNode;
 	float costSoFar = 0.f;
-	float estimatedTotalCost = 0.f;
 
 	bool operator==(const NodeRecord& other) const
 	{
 		return pAction == other.pAction
 			&& pConnectedNode == other.pConnectedNode
-			&& costSoFar == other.costSoFar
-			&& estimatedTotalCost == other.estimatedTotalCost;
-	};
-
-	bool operator<(const NodeRecord& other) const
-	{
-		return estimatedTotalCost < other.estimatedTotalCost;
+			&& costSoFar == other.costSoFar;
 	};
 };
 
