@@ -3,6 +3,7 @@
 #include "Agent.h"
 #include "GOAPPlanner.h"
 #include "DebugOutputManager.h"
+#include "ConfigManager.h"
 
 // STATES
 // ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +133,8 @@ void GoToState::Update(IExamInterface* pInterface, GOAPPlanner* pPlanner, Blackb
 	}
 	m_PathRefreshTimer += deltaTime;
 
-	pInterface->Draw_SolidCircle(pPlanner->GetAction()->GetMoveLocation(), .5f, Elite::Vector2{}, Elite::Vector3{ 0.f, 1.f, 0.f });
+	if (ConfigManager::GetInstance()->GetDebugGoalPosition())
+		pInterface->Draw_SolidCircle(pPlanner->GetAction()->GetMoveLocation(), .5f, Elite::Vector2{}, Elite::Vector3{ 0.f, 1.f, 0.f });
 }
 
 // Perform state: public FSMState

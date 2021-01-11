@@ -9,6 +9,7 @@
 #include "Blackboard.h"
 #include "FSMState.h"
 #include "StatesAndTransitions.h"
+#include "ConfigManager.h"
 
 Agent::Agent(IExamInterface* pInterface) :
 	m_pInterface(pInterface)
@@ -116,19 +117,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 // Render
 void Agent::Render(IExamInterface* pExamInterface, float dt) const
 {
-	//pExamInterface->Draw_SolidCircle(pExam, .7f, { 0,0 }, { 1, 0, 0 });
-	for (const Elite::Vector2& exploredLocation : m_ExploredTileLocations)
-	{
-		pExamInterface->Draw_Circle(exploredLocation, .5f, Elite::Vector3{ 1.f,1.f,1.f });
-	}
-
-	// Debugging
-	if (m_DebugSeek)
-	{
-		pExamInterface->Draw_SolidCircle(m_pSeekBehavior->GetTarget(), .5f, Elite::Vector2{}, Elite::Vector3{ 1.f, 0.f, 0.f });
-	}
-
-	if (m_DebugNavMeshExploration)
+	if (ConfigManager::GetInstance()->GetDebugHouseScoutVectors())
 	{
 		for (const Line& l : m_ScoutedVectors)
 		{

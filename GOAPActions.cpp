@@ -4,6 +4,7 @@
 #include "IExamInterface.h"
 #include "Blackboard.h"
 #include "WorldState.h"
+#include "ConfigManager.h"
 #include "Agent.h"
 #include "utils.h"
 
@@ -480,14 +481,19 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 		spz.timeSinceSpotted += dt;
 	}
 
-	/// TODO: remove | Debugging
-	// Debug seek location
-	pInterface->Draw_SolidCircle(m_pAgent->GetGoalPosition(), 3.f, {}, { 0.f,1.f,0.f });
+	// Debug goal
+	if (ConfigManager::GetInstance()->GetDebugGoalPosition())
+		pInterface->Draw_SolidCircle(m_pAgent->GetGoalPosition(), 3.f, {}, { 0.f,1.f,0.f });
 	// Debug corner locations
-	for (const Elite::Vector2& c : *m_pHouseCornerLocations)
+	if (ConfigManager::GetInstance()->GetDebugHouseCornerLocations())
 	{
-		pInterface->Draw_SolidCircle(c, 2.f, {}, { 0.f,0.f,1.f });
+		for (const Elite::Vector2& c : *m_pHouseCornerLocations)
+		{
+			pInterface->Draw_SolidCircle(c, 2.f, {}, { 0.f,0.f,1.f });
+		}
 	}
+	// Debug distant goal
+	if (ConfigManager::GetInstance()->GetDebugDistantGoalPosition())
 	pInterface->Draw_SolidCircle(m_pAgent->GetDistantGoalPosition(), 2.f, {}, { 1.f, 0.f, 0.f });
 
 	return true;

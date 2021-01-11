@@ -63,7 +63,6 @@ private:
 	int m_MaxInventorySlots{-1};
 
 	// Exploration
-	std::list<Elite::Vector2> m_ExploredTileLocations{};
 	std::vector<ExploredHouse> m_Houses{};
 	ExploredHouse* m_AgentHouse = nullptr;
 	std::list<EntityInfo> m_Items{};

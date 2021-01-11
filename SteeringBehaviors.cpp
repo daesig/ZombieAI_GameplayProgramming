@@ -5,6 +5,7 @@
 #include "Blackboard.h"
 #include "Agent.h"
 #include "IExamInterface.h"
+#include "ConfigManager.h"
 #include "utils.h"
 
 //SEEK (base>ISteeringBehavior)
@@ -173,7 +174,9 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 	}
 
 	// Debug agent velocity
-	pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
+	if (ConfigManager::GetInstance()->GetDebugSteering())
+		pInterface->Draw_Direction(agentInfo.Position, agentToGoalVec, 5.f, Elite::Vector3{ 0.f,1.f,0.f });
+
 	return steering;
 }
 
@@ -200,7 +203,9 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 	{
 		Elite::Vector2* lastSeenEnemyPos{};
 		pBlackboard->GetData("LastEnemyPos", lastSeenEnemyPos);
-		pInterface->Draw_Circle(*lastSeenEnemyPos, 1.5f, { 1.f,1.f,1.f });
+
+		if (ConfigManager::GetInstance()->GetDebugLastEnemyLocation())
+			pInterface->Draw_Circle(*lastSeenEnemyPos, 1.5f, { 1.f,1.f,1.f });
 
 		steering.AngularVelocity = agentInfo.MaxAngularSpeed;
 		if (pWorldState->IsStateMet("EnemyInSight", true))

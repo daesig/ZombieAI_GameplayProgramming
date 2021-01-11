@@ -33,6 +33,9 @@
     <ClCompile Include="DebugOutputManager.cpp">
       <Filter>Custom\Helpers</Filter>
     </ClCompile>
+    <ClCompile Include="ConfigManager.cpp">
+      <Filter>Custom\Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Plugin.h" />
@@ -77,6 +80,9 @@
       <Filter>Custom\GOAP</Filter>
     </ClInclude>
     <ClInclude Include="DebugOutputManager.h">
+      <Filter>Custom\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigManager.h">
       <Filter>Custom\Helpers</Filter>
     </ClInclude>
   </ItemGroup>
