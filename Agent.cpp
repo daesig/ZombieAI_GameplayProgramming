@@ -179,18 +179,12 @@ bool Agent::GrabItem(EntityInfo& i, IExamInterface* pInterface)
 		// Don't pick up garbage
 		if (itemInfo.Type == eItemType::GARBAGE)
 		{
-			std::cout << "Garbage!\n";
 			bool destroyed = pInterface->Item_Destroy(i);
 			return destroyed;
 		}
 
 		// Else, try and add the item to the inventory
-		bool itemSuccessfullyAdded = AddInventoryItem(i);
-		if (!itemSuccessfullyAdded)
-		{
-			std::cout << "test\n";
-		}
-		return itemSuccessfullyAdded;
+		return AddInventoryItem(i);
 	}
 
 	// No item was grabbed, return false
@@ -545,6 +539,9 @@ void Agent::InitializeBlackboard()
 
 	// Debug
 	m_pBlackboard->AddData("ScoutedVectors", &m_ScoutedVectors);
+	m_pBlackboard->AddData("DebugGOAPPlanner", &m_DebugGOAPPlanner);
+	m_pBlackboard->AddData("DebugFSMStates", &m_DebugFSMStates);
+	m_pBlackboard->AddData("DebugNavMeshExploration", &m_DebugNavMeshExploration);
 }
 void Agent::InitializeBehaviors()
 {
@@ -555,7 +552,7 @@ void Agent::InitializeBehaviors()
 void Agent::InitializeGOAP()
 {
 	// GOAP planner
-	m_pGOAPPlanner = new GOAPPlanner(m_pWorldState);
+	m_pGOAPPlanner = new GOAPPlanner(m_pWorldState, m_pBlackboard);
 
 	// GOAP Actions
 	GOAPAction* pGOAPFindGeneralHouseLocationsAction = new GOAPFindGeneralHouseLocationsAction(m_pGOAPPlanner);

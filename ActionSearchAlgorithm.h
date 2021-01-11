@@ -3,14 +3,18 @@
 
 class GOAPAction;
 class WorldState;
+class Blackboard;
 class ActionSearchAlgorithm
 {
 public:
-	ActionSearchAlgorithm(WorldState* pWorldState);
+	ActionSearchAlgorithm(WorldState* pWorldState, Blackboard* pBlackboard);
 	std::queue<GOAPAction*> Search(GOAPAction* pGoalAction, std::vector<GOAPAction*> possibleActions);
 private:
 	WorldState* m_pWorldState = nullptr;
 
 	float GetHeuristicCost(GOAPAction* pAction);
+
+	// Debugging
+	bool* m_pDebugGOAPPlanner = nullptr;
 };
 

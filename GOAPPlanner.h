@@ -4,10 +4,11 @@
 
 class ActionSearchAlgorithm;
 class WorldState;
+class Blackboard;
 class GOAPPlanner
 {
 public:
-	GOAPPlanner(WorldState* pWorldState);
+	GOAPPlanner(WorldState* pWorldState, Blackboard* pBlackboard);
 	~GOAPPlanner();
 
 	bool PlanAction();
@@ -31,4 +32,7 @@ private:
 	ActionSearchAlgorithm* m_pSearchAlgorithm = nullptr;
 
 	bool m_EncounteredProblem = false;
+
+	// Debugging
+	bool* m_pDebugGOAPPlanner = nullptr;
 };
