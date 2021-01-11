@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "structs.h"
+#include "DebugOutputManager.h"
 #include <unordered_map>
 
 class WorldState
