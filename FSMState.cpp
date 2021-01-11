@@ -1,3 +1,11 @@
+/*=============================================================================*/
+// Copyright 2020-2021 Elite Engine
+// Authors: Andries Geens
+// http://www.gameaipro.com/GameAIPro3/GameAIPro3_Chapter12_A_Reusable_Light-Weight_Finite-State_Machine.pdf
+/*=============================================================================*/
+// EStateMachine.h: Other implementation of a FSM
+/*=============================================================================*/
+
 #include "stdafx.h"
 #include "FSMState.h"
 #include "IExamInterface.h"
