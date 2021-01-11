@@ -294,7 +294,8 @@ bool Agent::AddInventoryItem(const EntityInfo& entity)
 			}
 			else
 			{
-				std::cout << "failed to add inventory item\n";
+				DebugOutputManager::GetInstance()->DebugLine("Failed to add inventory item\n",
+					DebugOutputManager::DebugType::INVENTORY);
 				return false;
 			}
 		}
@@ -332,14 +333,16 @@ bool Agent::AddInventoryItem(const EntityInfo& entity)
 						}
 						else
 						{
-							std::cout << "failed to replace add inventory item\n";
+							DebugOutputManager::GetInstance()->DebugLine("Failed to replace add inventory item\n",
+								DebugOutputManager::DebugType::INVENTORY);
 							return false;
 						}
 					}
 					else
 					{
 						// Failed to remove inventory item!
-						std::cout << "failed to remove inventory item\n";
+						DebugOutputManager::GetInstance()->DebugLine("Failed to remove inventory item\n",
+							DebugOutputManager::DebugType::INVENTORY);
 						return false;
 					}
 				}

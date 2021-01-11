@@ -28,6 +28,10 @@ void DebugOutputManager::DebugLine(const std::string& line, DebugType debugType)
 		SetConsoleTextAttribute(hConsole, int(TextColor::RED));
 		debug = m_DebugProblem;
 		break;
+	case DebugType::INVENTORY:
+		debug = m_DebugInventory;
+		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
+		break;
 	default:
 		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		debug = true;

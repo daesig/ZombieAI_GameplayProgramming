@@ -9,6 +9,7 @@ public:
 		FSM_STATE,
 		GOAP_PLANNER,
 		SEARCH_ALGORITHM,
+		INVENTORY,
 		PROBLEM
 	};
 
@@ -43,6 +44,7 @@ private:
 	bool m_DebugFSMState = true;
 	bool m_DebugGOAPPlanner = true;
 	bool m_DebugSearchAlgorithm = false;
+	bool m_DebugInventory = false;
 	bool m_DebugProblem = true;
 };
 
