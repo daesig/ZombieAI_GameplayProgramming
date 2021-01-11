@@ -75,7 +75,7 @@ SteeringPlugin_Output SeekAndDodge::CalculateSteering(IExamInterface* pInterface
 
 	if (enemyInSight)
 	{
-		float* enemyCount = nullptr;
+		int* enemyCount = nullptr;
 		pBlackboard->GetData("EnemyCount", enemyCount);
 		float dodgeRange{ 10.f };
 		if (*enemyCount > 1)

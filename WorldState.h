@@ -71,7 +71,6 @@ public:
 		return false;
 	}
 
-
 	bool DoesStateExist(const std::string& key) const
 	{
 		auto it = m_pStates.find(key);

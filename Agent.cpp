@@ -109,7 +109,7 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	//	m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
 	//}
 
-	m_EnemyCount = vEntitiesInFOV.size();
+	m_EnemyCount = static_cast<int>(vEntitiesInFOV.size());
 
 	// Update FSM states
 	if (m_pDecisionMaking)
@@ -180,10 +180,10 @@ void Agent::Render(IExamInterface* pExamInterface, float dt) const
 	if (m_DebugSeek)
 		pExamInterface->Draw_SolidCircle(m_pSeekBehavior->GetTarget(), .5f, Elite::Vector2{}, Elite::Vector3{ 1.f, 0.f, 0.f });
 	pExamInterface->Draw_Circle(Elite::Vector2{ 0.f,0.f }, 200.f, Elite::Vector3{ 0.f, 0.f, 1.f });
-	for (const Line& l : m_ScoutedVectors)
-	{
-		m_pInterface->Draw_Segment(l.pointA, l.pointB, { 1.f,1.f,1.f });
-	}
+	//for (const Line& l : m_ScoutedVectors)
+	//{
+	//	m_pInterface->Draw_Segment(l.pointA, l.pointB, { 1.f,1.f,1.f });
+	//}
 }
 
 // Controlling behaviors

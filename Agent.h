@@ -78,7 +78,7 @@ private:
 
 	// Enemy tracking
 	Elite::Vector2 m_LastSeenClosestEnemy{};
-	float m_EnemyCount{ 0 };
+	int m_EnemyCount{ 0 };
 
 	// Vitals
 	float m_MinimumRequiredHealth{ 9.5f };
