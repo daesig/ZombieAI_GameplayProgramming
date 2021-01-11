@@ -4,27 +4,6 @@
 #include "structs.h"
 #include <unordered_map>
 
-//class StateField
-//{
-//public:
-//	StateField() = default;
-//	virtual ~StateField() = default;
-//};
-//
-//class State final : public StateField
-//{
-//public:
-//	State(bool value)
-//	{
-//		m_Value = value;
-//	}
-//
-//	bool GetValue() const { return m_Value; }
-//	void SetValue(bool newValue) { m_Value = newValue; }
-//private:
-//	bool m_Value;
-//};
-
 class WorldState
 {
 public:
