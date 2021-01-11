@@ -14,6 +14,7 @@ public:
 		SEARCH_ALGORITHM,
 		INVENTORY,
 		STEERING,
+		WORLDSTATE,
 		PROBLEM
 	};
 
@@ -51,6 +52,7 @@ private:
 	bool m_DebugSearchAlgorithm = false;
 	bool m_DebugInventory = false;
 	bool m_DebugSteering = false;
+	bool m_DebugWorldState = true;
 	bool m_DebugProblem = true;
 };
 

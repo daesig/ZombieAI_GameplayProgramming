@@ -10,6 +10,7 @@ void DebugOutputManager::DebugLine(const std::string& line, DebugType debugType)
 	if (!m_DebuggingAllowed) return;
 
 	bool debug = false;
+	SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 
 	switch (debugType)
 	{
@@ -25,15 +26,12 @@ void DebugOutputManager::DebugLine(const std::string& line, DebugType debugType)
 		debug = m_DebugFSMState;
 		break;
 	case DebugType::GOAP_PLANNER:
-		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		debug = m_DebugGOAPPlanner;
 		break;
 	case DebugType::GOAP_ACTION:
 		debug = m_DebugGOAPAction;
-		SetConsoleTextAttribute(hConsole, int(TextColor::BLUE));
 		break;
 	case DebugType::SEARCH_ALGORITHM:
-		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		debug = m_DebugSearchAlgorithm;
 		break;
 	case DebugType::PROBLEM:
@@ -42,14 +40,15 @@ void DebugOutputManager::DebugLine(const std::string& line, DebugType debugType)
 		break;
 	case DebugType::INVENTORY:
 		debug = m_DebugInventory;
-		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		break;
 	case DebugType::STEERING:
 		debug = m_DebugSteering;
-		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
+		break;
+	case DebugType::WORLDSTATE:
+		debug = m_DebugWorldState;
+		SetConsoleTextAttribute(hConsole, int(TextColor::BLUE));
 		break;
 	default:
-		SetConsoleTextAttribute(hConsole, int(TextColor::WHITE));
 		debug = true;
 		break;
 	}

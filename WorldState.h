@@ -14,11 +14,13 @@ public:
 		auto it = m_pStates.find(key);
 		if (it == m_pStates.end())
 		{
-			std::cout << "Adding state: " << key << " \n";
+			DebugOutputManager::GetInstance()->DebugLine("Adding state: " + key + " \n",
+				DebugOutputManager::DebugType::WORLDSTATE);
 			m_pStates[key] = value;
 			return;
 		}
-		std::cout << "ERROR: State already exists\n";
+		DebugOutputManager::GetInstance()->DebugLine("ERROR: State " + key + " already exists\n",
+			DebugOutputManager::DebugType::PROBLEM);
 		return;
 	}
 
