@@ -53,7 +53,6 @@ private:
 	// Steering behaviors
 	ISteeringBehavior* m_pSteeringBehavior = nullptr;
 	DecisionMaking* m_pDecisionMaking = nullptr;
-	Wander* m_pWanderBehavior = nullptr;
 	Seek* m_pSeekBehavior = nullptr;
 	SeekAndDodge* m_pSeekDodgeBehavior = nullptr;
 	KillBehavior* m_pKillBehavior = nullptr;
@@ -91,8 +90,9 @@ private:
 
 	// Debugging
 	bool m_DebugSeek = false;
-	float m_DebugTimer{ 2.f };
-	float m_DebugTime{ 2.f };
+	bool m_DebugNavMeshExploration = false;
+	bool m_DebugFSMStates = false;
+	bool m_DebugGOAPPlanner = false;
 	std::vector<Line> m_ScoutedVectors{};
 
 	// Private functions

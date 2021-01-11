@@ -70,7 +70,6 @@ enum class EvadeType
 
 enum class BehaviorType
 {
-	WANDER,
 	SEEK,
 	SEEKDODGE,
 	SEEKITEM,

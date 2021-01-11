@@ -219,8 +219,6 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 		steering.AngularVelocity = agentInfo.MaxAngularSpeed;
 		if (pWorldState->IsStateMet("EnemyInSight", true))
 		{
-			std::cout << "angle: " << m_AngleToLastEnemy << "\n";
-
 			if (m_AngleToLastEnemy > goalAngle)
 			{
 				steering.AngularVelocity = agentInfo.MaxAngularSpeed;
@@ -231,7 +229,6 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 			}
 			else
 			{
-				std::cout << "SHOOT\n";
 				// Stop turning
 				steering.AngularVelocity = 0.f;
 
@@ -239,7 +236,6 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 				bool isValid = pBlackboard->GetData("Agent", pAgent);
 				if (pAgent)
 				{
-					std::cout << "SHOOT GUN\n";
 					pAgent->Shoot();
 				}
 			}
@@ -254,55 +250,6 @@ SteeringPlugin_Output KillBehavior::CalculateSteering(IExamInterface* pInterface
 	//		if(entityInfo.Location)
 	//	}
 	//}
-
-	return steering;
-}
-
-//WANDER (base>ISteeringBehavior)
-Wander::Wander() :
-	m_DistanceFromActor{ 5.f },
-	m_WanderRadius{ 5.f },
-	m_RenewDistance{ 2.f }
-{}
-SteeringPlugin_Output Wander::CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal)
-{
-	SteeringPlugin_Output steering{};
-
-	// Check where the agent is looking
-	float rotation = agentInfo.Orientation;
-
-	// Determine wander radius in front of actor
-	// Scale the wander distance with the target movement speed for better wander behavior
-	float finalDistanceFromActor = m_DistanceFromActor + agentInfo.AgentSize + (agentInfo.CurrentLinearSpeed / 2.f);
-	const Elite::Vector2 wanderCenter
-	{
-		agentInfo.Position +
-		Elite::Vector2(finalDistanceFromActor * (float)cos(rotation - M_PI / 2.f),
-						finalDistanceFromActor * (float)sin(rotation - M_PI / 2.f))
-	};
-
-
-	// Scale the wander radius with the target movement speed for better wander behavior
-	float finalWanderRadius = m_WanderRadius + agentInfo.AgentSize + agentInfo.MaxLinearSpeed / 2.f;
-	// Agent is close enough to wanderTarget or the target has left the wander radius
-	if ((agentInfo.Position.Distance(m_Target) < m_RenewDistance + agentInfo.AgentSize) ||
-		(wanderCenter.Distance(m_Target) > (finalWanderRadius)))
-	{
-		// Create an offset from the center of the wanderradius
-		int randomAngle{ Elite::randomInt(360) };
-		Elite::Vector2 randomOffset{
-			Elite::randomFloat(finalWanderRadius) * (float)sin(randomAngle),
-			Elite::randomFloat(finalWanderRadius) * (float)cos(randomAngle)
-		};
-
-		// Set target position with the offset
-		m_Target = wanderCenter + randomOffset;
-	}
-
-	// Seek
-	steering.LinearVelocity = m_Target - agentInfo.Position; //Desired Velocity
-	steering.LinearVelocity.Normalize(); //Normalize Desired Velocity
-	steering.LinearVelocity *= agentInfo.MaxLinearSpeed; //Rescale to Max Speed=
 
 	return steering;
 }

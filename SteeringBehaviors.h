@@ -79,15 +79,3 @@ private:
 	float m_NavMeshRefreshTime{ 1.f };
 	float m_NavMeshRefreshTimer{ 1.f };
 };
-
-class Wander : public ISteeringBehavior
-{
-public:
-	Wander();
-	virtual ~Wander() = default;
-	SteeringPlugin_Output CalculateSteering(IExamInterface* pInterface, float deltaT, AgentInfo& agentInfo, Blackboard* pBlackboard, bool changeGoal = true) override;
-private:
-	float m_DistanceFromActor;
-	float m_WanderRadius;
-	float m_RenewDistance;
-};

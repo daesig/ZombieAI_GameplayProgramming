@@ -32,13 +32,11 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 {
 	SteeringPlugin_Output steering{};
 
+	// Get interface information
 	AgentInfo& agentInfo = m_pInterface->Agent_GetInfo();
-
+	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 	// Set the house the agent is in
 	SetAgentHouseInBlackboard(agentInfo.Position);
-
-	//auto vHousesInFOV = utils::GetHousesInFOV(pInterface);//uses m_pInterface->Fov_GetHouseByIndex(...) 
-	auto vEntitiesInFOV = utils::GetEntitiesInFOV(m_pInterface); //uses m_pInterface->Fov_GetEntityByIndex(...)
 
 	// Manage bitten status
 	if (agentInfo.WasBitten)
@@ -72,19 +70,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	}
 	m_FastScoutTimer += dt;
 
-	// Debugging
-	if (m_DebugTimer > m_DebugTime)
-	{
-		m_DebugTimer = 0.f;
-		// Debug
-		GOAPAction* pCurrentAction = m_pGOAPPlanner->GetAction();
-		if (pCurrentAction)
-		{
-			std::cout << "Current action: " << pCurrentAction->ToString() << "\n";
-		}
-	}
-	m_DebugTimer += dt;
-
 	// Get most nearby enemy and enemy count
 	float closestDistanceSq{ FLT_MAX };
 	for (auto& enemyInFov : vEntitiesInFOV)
@@ -101,14 +86,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 		}
 	}
 
-	// Debug override
-	//if (m_pWorldState->IsStateMet("HasWeapon", true))
-	//{
-	//	m_LastSeenClosestEnemy = { 0.1f,0.1f };
-	//	m_pWorldState->SetState("EnemyInSight", true);
-	//	m_pBlackboard->ChangeData("LastEnemyPos", &m_LastSeenClosestEnemy);
-	//}
-
 	m_EnemyCount = static_cast<int>(vEntitiesInFOV.size());
 
 	// Update FSM states
@@ -122,40 +99,6 @@ SteeringPlugin_Output Agent::UpdateSteering(float dt)
 	{
 		steering = m_pSteeringBehavior->CalculateSteering(m_pInterface, dt, agentInfo, m_pBlackboard);
 	}
-
-	// Update known locations
-	if (m_ExploredLocationTimer >= m_ExploredLocationRefreshTime)
-	{
-		// Get closest navmesh node
-		Elite::Vector2 currentPosition{ m_pInterface->NavMesh_GetClosestPathPoint(agentInfo.Position) };
-
-		// Add the location if it doesn't exist yet
-		auto it = std::find(m_ExploredTileLocations.begin(), m_ExploredTileLocations.end(), currentPosition);
-		if (it == m_ExploredTileLocations.end())
-		{
-			//m_ExploredTileLocations.push_back(currentPosition);
-			//std::cout << "Explored new position: [ " << currentPosition.x << ", " << currentPosition.y << " ]\n";
-		}
-		m_ExploredLocationTimer = 0.f;
-	}
-	m_ExploredLocationTimer += dt;
-
-	//for (const EntityInfo& entity : vEntitiesInFOV)
-	//{
-	//	ItemInfo item{};
-	//	if (entity.Type == eEntityType::ITEM)
-	//		pInterface->Item_GetInfo(entity, item);
-	//}
-
-	//for (auto& e : vEntitiesInFOV)
-	//{
-	//	if (e.Type == eEntityType::PURGEZONE)
-	//	{
-	//		PurgeZoneInfo zoneInfo;
-	//		pInterface->PurgeZone_GetInfo(e, zoneInfo);
-	//		std::cout << "Purge Zone in FOV:" << e.Location.x << ", " << e.Location.y << " ---EntityHash: " << e.EntityHash << "---Radius: " << zoneInfo.Radius << std::endl;
-	//	}
-	//}		
 
 	for (Line& l : m_ScoutedVectors)
 	{
@@ -178,12 +121,17 @@ void Agent::Render(IExamInterface* pExamInterface, float dt) const
 
 	// Debugging
 	if (m_DebugSeek)
+	{
 		pExamInterface->Draw_SolidCircle(m_pSeekBehavior->GetTarget(), .5f, Elite::Vector2{}, Elite::Vector3{ 1.f, 0.f, 0.f });
-	pExamInterface->Draw_Circle(Elite::Vector2{ 0.f,0.f }, 200.f, Elite::Vector3{ 0.f, 0.f, 1.f });
-	//for (const Line& l : m_ScoutedVectors)
-	//{
-	//	m_pInterface->Draw_Segment(l.pointA, l.pointB, { 1.f,1.f,1.f });
-	//}
+	}
+
+	if (m_DebugNavMeshExploration)
+	{
+		for (const Line& l : m_ScoutedVectors)
+		{
+			m_pInterface->Draw_Segment(l.pointA, l.pointB, { 1.f,1.f,1.f });
+		}
+	}
 }
 
 // Controlling behaviors
@@ -196,9 +144,6 @@ void Agent::SetBehavior(BehaviorType behaviorType)
 	m_DebugSeek = false;
 	switch (behaviorType)
 	{
-	case BehaviorType::WANDER:
-		m_pSteeringBehavior = m_pWanderBehavior;
-		break;
 	case BehaviorType::SEEK:
 		m_pSteeringBehavior = m_pSeekBehavior;
 		m_DebugSeek = true;
@@ -603,7 +548,6 @@ void Agent::InitializeBlackboard()
 }
 void Agent::InitializeBehaviors()
 {
-	m_pWanderBehavior = new Wander();
 	m_pSeekBehavior = new Seek();
 	m_pSeekDodgeBehavior = new SeekAndDodge();
 	m_pKillBehavior = new KillBehavior();
@@ -697,8 +641,6 @@ void Agent::DeleteGOAP()
 }
 void Agent::DeleteBehaviors()
 {
-	delete m_pWanderBehavior;
-	m_pWanderBehavior = nullptr;
 	delete m_pSeekBehavior;
 	m_pSeekBehavior = nullptr;
 	delete m_pSeekDodgeBehavior;
