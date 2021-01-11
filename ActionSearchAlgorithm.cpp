@@ -5,11 +5,9 @@
 #include "Blackboard.h"
 #include "utils.h"
 
-ActionSearchAlgorithm::ActionSearchAlgorithm(WorldState* pWorldState, Blackboard* pBlackboard) :
+ActionSearchAlgorithm::ActionSearchAlgorithm(WorldState* pWorldState) :
 	m_pWorldState{ pWorldState }
 {
-	// Setup debug bool
-	pBlackboard->GetData("DebugGOAPPlanner", m_pDebugGOAPPlanner);
 }
 
 std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, std::vector<GOAPAction*> possibleActions)
@@ -101,8 +99,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 			if (satisfiedPreconditionsFromAction.size() > 0)
 			{
 				bool markActionForAdd = true;
-				if (*m_pDebugGOAPPlanner)
-					std::cout << "new action: " << pPotentialAction->ToString() << " meets at least 1 condition\n";
+				DebugOutputManager::GetInstance()->DebugLine("New action : " + pPotentialAction->ToString() + " meets at least 1 condition\n", 
+					DebugOutputManager::DebugType::SEARCH_ALGORITHM
+				);
 
 				// Check if they try to satisfy the same property
 				int index{ 0 };
@@ -146,8 +145,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 								if (potentialActionCost < previousActionCost)
 								{
 									// Replace the previous action with this action since it's cheaper
-									if (*m_pDebugGOAPPlanner)
-										std::cout << "Replacing: " << pPreviousAction->ToString() << " with " << pPotentialAction->ToString() << "\n";
+									DebugOutputManager::GetInstance()->DebugLine("Replacing: " + pPreviousAction->ToString() + " with " + pPotentialAction->ToString() + "\n",
+										DebugOutputManager::DebugType::SEARCH_ALGORITHM
+									);
 									actionsThatSatisfy[index] = pPotentialAction;
 								}
 								// Else this one is more expensive, ignore the pPotentialAction
@@ -162,8 +162,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 				// Action is not overruled by any previous actions
 				if (markActionForAdd)
 				{
-					if (*m_pDebugGOAPPlanner)
-						std::cout << "Found a new action: " << pPotentialAction->ToString() << "\n";
+					DebugOutputManager::GetInstance()->DebugLine("Found a new action: " + pPotentialAction->ToString() + "\n",
+						DebugOutputManager::DebugType::SEARCH_ALGORITHM
+					);
 					actionsThatSatisfy.push_back(pPotentialAction);
 				}
 			}
@@ -205,8 +206,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 					{
 						if (openlistRecord.pAction->ToString() == pAction->ToString())
 						{
-							if (*m_pDebugGOAPPlanner)
-								std::cout << "Action already exists!!\n";
+							DebugOutputManager::GetInstance()->DebugLine("Action already exists!!\n",
+								DebugOutputManager::DebugType::SEARCH_ALGORITHM
+							);
 							exists = true;
 						}
 					}
@@ -217,8 +219,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 						//nr.pConnectedNode = currentRecord;
 						nr.costSoFar = currentRecord.costSoFar + pAction->GetCost();
 						openlist.push_back(nr);
-						if (*m_pDebugGOAPPlanner)
-							std::cout << "Added to openlist: " << pAction->ToString() << "\n";
+						DebugOutputManager::GetInstance()->DebugLine("Added to openlist: " + pAction->ToString() + "\n",
+							DebugOutputManager::DebugType::SEARCH_ALGORITHM
+						);
 					}
 				}
 			);
@@ -249,8 +252,9 @@ std::queue<GOAPAction*> ActionSearchAlgorithm::Search(GOAPAction* pGoalAction, s
 	}
 
 
-	if (*m_pDebugGOAPPlanner)
-		std::cout << "Actions planned!\n";
+	DebugOutputManager::GetInstance()->DebugLine("Actions planned!\n",
+		DebugOutputManager::DebugType::SEARCH_ALGORITHM
+	);
 
 	return actionQueue;
 }

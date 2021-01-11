@@ -185,6 +185,7 @@
     <ClInclude Include="ActionSearchAlgorithm.h" />
     <ClInclude Include="Agent.h" />
     <ClInclude Include="Blackboard.h" />
+    <ClInclude Include="DebugOutputManager.h" />
     <ClInclude Include="DecisionMaking.h" />
     <ClInclude Include="FSMState.h" />
     <ClInclude Include="GOAPActions.h" />
@@ -201,6 +202,7 @@
   <ItemGroup>
     <ClCompile Include="ActionSearchAlgorithm.cpp" />
     <ClCompile Include="Agent.cpp" />
+    <ClCompile Include="DebugOutputManager.cpp" />
     <ClCompile Include="FSMState.cpp" />
     <ClCompile Include="GOAPActions.cpp" />
     <ClCompile Include="GOAPPlanner.cpp" />

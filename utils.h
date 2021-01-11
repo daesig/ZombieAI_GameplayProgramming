@@ -1,5 +1,6 @@
 #pragma once
 #include "IExamInterface.h"
+#include "DebugOutputManager.h"
 #include <vector>
 #include "structs.h"
 

@@ -10,10 +10,17 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 {
 	ResetIdleState();
 
+	// Setup debug
+	if (m_pDebugFSMStates == nullptr)
+	{
+		pBlackboard->GetData("DebugFSMStates", m_pDebugFSMStates);
+	}
+
 	// The last action encountered a problem with fullfilling it's effects. Replan!
 	if (pPlanner->GetEncounteredProblem() == true)
 	{
-		std::cout << "Action encountered a problem\n";
+		if (*m_pDebugFSMStates)
+			std::cout << "Action encountered a problem\n";
 		pPlanner->SetEncounteredProblem(false);
 		m_ActionTimer = m_RefreshActionTime + 1.f;
 		m_ReplanActions = true;
@@ -29,7 +36,8 @@ void IdleState::OnEnter(IExamInterface* pInterface, GOAPPlanner* pPlanner, Black
 		{
 			// Next action exists
 			m_HasNext = true;
-			std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
+			if (*m_pDebugFSMStates)
+				std::cout << "Next action chosen, currentAction: " << pPlanner->GetAction()->ToString() << "\n";
 		}
 	}
 }

@@ -7,12 +7,9 @@ class Blackboard;
 class ActionSearchAlgorithm
 {
 public:
-	ActionSearchAlgorithm(WorldState* pWorldState, Blackboard* pBlackboard);
+	ActionSearchAlgorithm(WorldState* pWorldState);
 	std::queue<GOAPAction*> Search(GOAPAction* pGoalAction, std::vector<GOAPAction*> possibleActions);
 private:
 	WorldState* m_pWorldState = nullptr;
-
-	// Debugging
-	bool* m_pDebugGOAPPlanner = nullptr;
 };
 

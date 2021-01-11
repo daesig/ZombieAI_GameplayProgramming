@@ -8,7 +8,7 @@ class Blackboard;
 class GOAPPlanner
 {
 public:
-	GOAPPlanner(WorldState* pWorldState, Blackboard* pBlackboard);
+	GOAPPlanner(WorldState* pWorldState);
 	~GOAPPlanner();
 
 	bool PlanAction();
@@ -32,7 +32,4 @@ private:
 	ActionSearchAlgorithm* m_pSearchAlgorithm = nullptr;
 
 	bool m_EncounteredProblem = false;
-
-	// Debugging
-	bool* m_pDebugGOAPPlanner = nullptr;
 };

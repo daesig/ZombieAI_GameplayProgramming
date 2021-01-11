@@ -30,6 +30,9 @@
     <ClCompile Include="ActionSearchAlgorithm.cpp">
       <Filter>Custom\GOAP</Filter>
     </ClCompile>
+    <ClCompile Include="DebugOutputManager.cpp">
+      <Filter>Custom\Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Plugin.h" />
@@ -72,6 +75,9 @@
     </ClInclude>
     <ClInclude Include="ActionSearchAlgorithm.h">
       <Filter>Custom\GOAP</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugOutputManager.h">
+      <Filter>Custom\Helpers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

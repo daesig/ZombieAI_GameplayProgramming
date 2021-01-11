@@ -4,16 +4,13 @@
 #include "ActionSearchAlgorithm.h"
 #include "Blackboard.h"
 
-GOAPPlanner::GOAPPlanner(WorldState* pWorldState, Blackboard* pBlackboard) :
+GOAPPlanner::GOAPPlanner(WorldState* pWorldState) :
 	m_pActions{},
 	m_CurrentActionIndex{ 0 },
 	m_pWorldState{ pWorldState }
 {
 	m_pGoalAction = new GOAPSurvive(this);
-	m_pSearchAlgorithm = new ActionSearchAlgorithm(m_pWorldState, pBlackboard);
-
-	// Setup debug bool
-	pBlackboard->GetData("DebugGOAPPlanner", m_pDebugGOAPPlanner);
+	m_pSearchAlgorithm = new ActionSearchAlgorithm(m_pWorldState);
 }
 
 GOAPPlanner::~GOAPPlanner()
