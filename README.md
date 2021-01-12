@@ -79,7 +79,7 @@ Simply implementing the actions via a Finite State Machine / Behavior Tree would
 This was expected but I'm glad with the result. It feels more like having an agent with a brain capable of picking his own actions and has lots of potential. 
 
 ## Future work
-I will definitely be creating more projects using a GOAP system.
+I had a lot of fun implementing this GOAP system. It's definitely something i will be visiting in future gameplay related projects!
 
 ## Resources
 * [GOAP implementation F.E.A.R.](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi57eHroIXuAhUKqaQKHW7vA7wQFjABegQIAhAC&url=https%3A%2F%2Falumni.media.mit.edu%2F~jorkin%2Fgdc2006_orkin_jeff_fear.pdf&usg=AOvVaw1A6V7mt2imaclwaXyjy_vs)
