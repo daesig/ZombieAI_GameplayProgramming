@@ -14,7 +14,7 @@
 Agent::Agent(IExamInterface* pInterface) :
 	m_pInterface(pInterface)
 {
-	DebugOutputManager::GetInstance()->DebugLine("ZombieAI version 1.0", DebugOutputManager::DebugType::CONSTRUCTION);
+	DebugOutputManager::GetInstance()->DebugLine("ZombieAI version 1.0\n", DebugOutputManager::DebugType::CONSTRUCTION);
 	Initialize();
 	m_ExploredLocationTimer = m_ExploredLocationRefreshTime;
 	m_MaxInventorySlots = m_pInterface->Inventory_GetCapacity();
