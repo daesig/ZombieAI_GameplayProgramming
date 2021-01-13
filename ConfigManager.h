@@ -22,11 +22,11 @@ public:
 private:
 	ConfigManager() = default;
 
-	bool m_DebugHouseScoutVectors = true;
+	bool m_DebugHouseScoutVectors = false;
 	bool m_DebugHouseCornerLocations = true;
-	bool m_DebugLastEnemyLocation = false;
+	bool m_DebugLastEnemyLocation = true;
 	bool m_DebugSteering = false;
-	bool m_DebugGoalPosition = false;
-	bool m_DebugDistantGoalPosition = false;
+	bool m_DebugGoalPosition = true;
+	bool m_DebugDistantGoalPosition = true;
 };
 

@@ -494,7 +494,7 @@ bool GOAPSearchItem::Perform(IExamInterface* pInterface, GOAPPlanner* pPlanner, 
 	}
 	// Debug distant goal
 	if (ConfigManager::GetInstance()->GetDebugDistantGoalPosition())
-	pInterface->Draw_SolidCircle(m_pAgent->GetDistantGoalPosition(), 2.f, {}, { 1.f, 0.f, 0.f });
+		pInterface->Draw_SolidCircle(m_pAgent->GetDistantGoalPosition(), 2.f, {}, { 1.f, 0.f, 0.f });
 
 	return true;
 }
