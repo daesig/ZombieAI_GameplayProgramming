@@ -73,6 +73,14 @@ This is important because it means the agent may get stuck inside of 1 action if
 The FSM will repeatedly check for transitions and also transition back into the Idlestate once the action's IsDone() function returns true.
 This will make the FSM get the next action in the list and start performing this one. It will ask for a new plan once all actions have been completed.
 
+## Result and conclusion
+Simply implementing the actions via a Finite State Machine / Behavior Tree would have been faster than using a GOAP for a project of this size. A GOAP wwould have been a good option if there were more actions / more different kinds of agents. 
+
+This was expected but I'm glad with the result. It feels more like having an agent with a brain capable of picking his own actions and has lots of potential. 
+
+## Future work
+I had a lot of fun implementing this GOAP system. It's definitely something i will be revisiting in future gameplay related projects!
+
 ## Resources
 * [GOAP implementation F.E.A.R.](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi57eHroIXuAhUKqaQKHW7vA7wQFjABegQIAhAC&url=https%3A%2F%2Falumni.media.mit.edu%2F~jorkin%2Fgdc2006_orkin_jeff_fear.pdf&usg=AOvVaw1A6V7mt2imaclwaXyjy_vs)
 * [GOAP by Brent Owens](https://gamedevelopment.tutsplus.com/tutorials/goal-oriented-action-planning-for-a-smarter-ai--cms-20793)
